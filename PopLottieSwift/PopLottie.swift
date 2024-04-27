@@ -188,7 +188,7 @@ public struct LottieView : View, AnimationRenderer
 		return lhs.filename == rhs.filename
 	}
 	
-	public var filename : URL
+	public var filename : URL?=nil
 	public var scaleMode = ScaleMode.ScaleToFit
 
 	//	this is essentially state
@@ -225,7 +225,14 @@ public struct LottieView : View, AnimationRenderer
 		self.startTime = Date.now
 		self.animation = LottieAnimation(filename: filename)
 	}
-	 
+		
+	//	use pre-existing/loaded doc
+	public init(lottie:Root)
+	{
+		self.startTime = Date.now
+		self.animation = LottieAnimation(lottie: lottie)
+	}
+
 	public var body: some View
 	{
 		ZStack()

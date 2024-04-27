@@ -95,6 +95,10 @@ class LottieAnimation : PathAnimation
 		}
 	}
 	
+	init(lottie:Root)
+	{
+		self.lottie = lottie
+	}
 	
 	func OnError(_ error:String)
 	{
