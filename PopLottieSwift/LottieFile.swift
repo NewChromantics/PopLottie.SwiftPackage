@@ -597,7 +597,9 @@ public struct Keyframed_FloatArray : Decodable//: IKeyframed<Frame_FloatArray>
 
 	enum CodingKeys: CodingKey 
 	{
-		case k
+		//	gr: we ARE k, we don't contain k
+		//case k
+		case t
 	}
 	
 	public init(from decoder: Decoder) throws
@@ -1341,6 +1343,45 @@ public struct LayerMeta : Decodable, Identifiable	//	shape layer
 	public var ChildrenBackToFront : [Shape]	{	ChildrenFrontToBack.reversed()	}
 	public var bm : Int?
 	public var BlendMode : Int	{	bm ?? 0 }
+	
+	
+	//	only needed because of id
+	enum CodingKeys: CodingKey {
+		case ip
+		case op
+		case nm
+		case refId
+		case ind
+		case parent
+		case st
+		case ddd
+		case ty
+		case sr
+		case ks
+		case ao
+		case shapes
+		case bm
+	}
+	
+	public init(from decoder: Decoder) throws {
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.ip = try container.decode(Double.self, forKey: .ip)
+		self.op = try container.decode(Double.self, forKey: .op)
+		self.nm = try container.decode(String.self, forKey: .nm)
+		self.refId = try container.decodeIfPresent(String.self, forKey: .refId)
+		self.ind = try container.decodeIfPresent(Int.self, forKey: .ind)
+		self.parent = try container.decodeIfPresent(Int.self, forKey: .parent)
+		self.st = try container.decode(Double.self, forKey: .st)
+		self.ddd = try container.decode(Int.self, forKey: .ddd)
+		self.ty = try container.decode(Int.self, forKey: .ty)
+		self.sr = try container.decode(Int.self, forKey: .sr)
+		self.ks = try container.decode(ShapeTransform.self, forKey: .ks)
+		self.ao = try container.decode(Int.self, forKey: .ao)
+		self.shapes = try container.decodeIfPresent([ShapeWrapper].self, forKey: .shapes)
+		self.bm = try container.decodeIfPresent(Int.self, forKey: .bm)
+	}
+	
+	
 }
 
 
