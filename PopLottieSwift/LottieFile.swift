@@ -1,8 +1,7 @@
 import QuartzCore
 
 
-
-enum ShapeType : String
+public enum ShapeType : String
 {
 	case Fill = "fl"
 	case Stroke = "st"
@@ -21,7 +20,7 @@ func GetShapeType(_ type:String?) -> ShapeType
 }
 
 
-class Shape : Decodable//, Hashable
+public class Shape : Decodable//, Hashable
 {
 	static func == (lhs: Shape, rhs: Shape) -> Bool 
 	{
@@ -77,7 +76,7 @@ struct ShapeStyle
 }
 
 //	gr: we have this only in c# to aid JSON parsing... keeping it here for consistency, but may not be needed in swift
-struct ShapeWrapper : Decodable
+public struct ShapeWrapper : Decodable
 {
 	public var TheShape : Shape;
 	public var type : ShapeType	{	TheShape.type	}
@@ -89,7 +88,7 @@ struct ShapeWrapper : Decodable
 		case ty
 	}
 	
-	init(from decoder: Decoder) throws 
+	public init(from decoder: Decoder) throws 
 	{
 		let container = try decoder.container(keyedBy: CodingKeys.self)
 		self.ty = try container.decode(String.self, forKey: .ty)
@@ -232,7 +231,7 @@ struct AnimatedBezier : Decodable
 
 
 //	gr: faster as class. Struct is copying too many elements
-class Frame_FloatArray : Decodable, IFrame
+public class Frame_FloatArray : Decodable, IFrame
 {
 	//	gr: all these are optional as you sometimes get a terminating frame which is just a time
 	var i : ValueCurve?
@@ -535,7 +534,7 @@ class IFrameFuncs
 
 
 //[JsonConverter(typeof(KeyframedConvertor<Keyframed_FloatArray,Frame_FloatArray>))]
-struct Keyframed_FloatArray : Decodable//: IKeyframed<Frame_FloatArray>
+public struct Keyframed_FloatArray : Decodable//: IKeyframed<Frame_FloatArray>
 {
 	var Frames : [Frame_FloatArray]
 
@@ -544,7 +543,7 @@ struct Keyframed_FloatArray : Decodable//: IKeyframed<Frame_FloatArray>
 		case k
 	}
 	
-	init(from decoder: Decoder) throws
+	public init(from decoder: Decoder) throws
 	{
 		self.Frames = []
 
@@ -556,6 +555,7 @@ struct Keyframed_FloatArray : Decodable//: IKeyframed<Frame_FloatArray>
 		//		- array of array of numbers
 		if let Dictionary = try? decoder.container(keyedBy: CodingKeys.self)
 		{
+			//	gr: this doesn't really happen, because we never match the coding keys?
 			throw fatalError("Keyframed_FloatArray dictionary")
 		}
 		else if let SingleValue = try? decoder.singleValueContainer()
@@ -792,7 +792,7 @@ struct Keyframed_Float : Decodable//: IKeyframed<Frame_FloatArray>
 	}
 }
 
-struct AnimatedNumber : Decodable
+public struct AnimatedNumber : Decodable
 {
 	var a : Int
 	var Animated : Bool	{	a != 0	}
@@ -805,7 +805,7 @@ struct AnimatedNumber : Decodable
 	}
 }
 
-struct AnimatedColour : Decodable
+public struct AnimatedColour : Decodable
 {
 	var a : Int
 	var Animated : Bool	{ a != 0 }
@@ -829,7 +829,7 @@ struct AnimatedColour : Decodable
 }
 
 
-class AnimatedVector : Decodable
+public class AnimatedVector : Decodable
 {
 	public var a : Int? = 0
 	public var Animated : Bool{	a ?? 0 != 0	}
@@ -1086,7 +1086,7 @@ class ShapeGroup : Shape
 }
 
 
-class ShapeTransform : Shape
+public class ShapeTransform : Shape
 {
 	//	transform
 	public var p : AnimatedVector	//	translation
@@ -1223,8 +1223,12 @@ public class Transformer
 	
 }
 
-struct LayerMeta : Decodable	//	shape layer
+public struct LayerMeta : Decodable, Identifiable	//	shape layer
 {
+	//	gr: the layer type doesn't have a built in uid unless it needs it for parenting...
+	//		can we generate one here with a uuid fallback?
+	public var id = UUID()
+	
 	public func IsVisible(_ Frame:FrameNumber) -> Bool
 	{
 		if ( Frame < FirstKeyFrame )
@@ -1277,7 +1281,7 @@ struct LayerMeta : Decodable	//	shape layer
 
 
 //	seems a little faster as struct
-struct Root : Decodable
+public struct Root : Decodable
 {
 	public func FrameToTime(_ FrameNumber:FrameNumber) -> TimeInterval
 	{

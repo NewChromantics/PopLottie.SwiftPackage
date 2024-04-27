@@ -1,8 +1,8 @@
 import Foundation
 import SwiftUI
 import QuartzCore
-typealias Vector2 = CGPoint
-typealias FrameNumber = Double
+public typealias Vector2 = CGPoint
+public typealias FrameNumber = Double
 
 
 //	gr: using CGColor ends up with OS calls and retains and such
