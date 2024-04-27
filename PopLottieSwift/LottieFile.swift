@@ -256,7 +256,11 @@ public class Frame_FloatArray : Decodable, IFrame
 	var HoldingFrame : Bool	{	h != 0	}
 	var t : Double
 	var s : [Float]? = nil	//	start value
+	//	gr: e sometimes missing for .to & .ti
 	var e : [Float]? = nil	//	end value
+	var to : [Float]? = nil	//	end value
+	var ti : [Float]? = nil	//	end value
+
 	var Frame : FrameNumber	{	FrameNumber(t)	}
 	var IsTerminatingFrame : Bool {	s==nil	}
 	
@@ -275,7 +279,7 @@ public class Frame_FloatArray : Decodable, IFrame
 		self.t = t
 	}
 	
-	required init(from decoder: Decoder) throws {
+	required public init(from decoder: Decoder) throws {
 		let container = try decoder.container(keyedBy: CodingKeys.self)
 		self.i = try container.decodeIfPresent(ValueCurve.self, forKey: .i)
 		self.o = try container.decodeIfPresent(ValueCurve.self, forKey: .o)
@@ -354,6 +358,43 @@ struct ValueCurve : Decodable
 {
 	var x : [Float]	//	time X axis
 	var y : [Float]	//	value Y axis
+
+	//	gr: sometimes not an array, just x:0 y:1
+	//		so we need a custom init again
+	enum CodingKeys: CodingKey {
+		case x
+		case y
+	}
+	
+	init(from decoder: Decoder) throws 
+	{
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		if let xs = try? container.decode([Float].self, forKey: .x)
+		{
+			self.x = xs
+		}
+		else if let x = try? container.decode(Float.self, forKey: .x)
+		{
+			self.x = [x]
+		}
+		else
+		{
+			throw fatalError("ValueCurve with no [decodable] x")
+		}
+
+		if let ys = try? container.decode([Float].self, forKey: .y)
+		{
+			self.y = ys
+		}
+		else if let y = try? container.decode(Float.self, forKey: .y)
+		{
+			self.y = [y]
+		}
+		else
+		{
+			throw fatalError("ValueCurve with no [decodable] x")
+		}
+	}
 }
 
 protocol IFrame
