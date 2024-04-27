@@ -11,12 +11,23 @@ public enum ShapeType : String
 	case Ellipse = "el"
 	case TrimPath = "tm"		//	path trimmer, to modify (trim) a sibling shape
 	case Rectangle = "rc"
+	case Merge = "mm"
 	
 	case Unknown = "??"		//	gr: instead of throwing and complicating swift, have a dummy value
 }
 func GetShapeType(_ type:String?) -> ShapeType
 {
-	return ShapeType(rawValue: type ?? ShapeType.Unknown.rawValue) ?? ShapeType.Unknown
+	//	gr: these ifs are for debugging
+	if ( type == nil )
+	{
+		return ShapeType.Unknown
+	}
+	let ParsedShape = ShapeType(rawValue: type ?? ShapeType.Unknown.rawValue)
+	if ( ParsedShape == nil )
+	{
+		return ShapeType.Unknown
+	}
+	return ParsedShape ?? ShapeType.Unknown
 }
 
 
@@ -108,6 +119,7 @@ public struct ShapeWrapper : Decodable
 		case ShapeType.Fill:		return try ShapeFillAndStroke(from:decoder)
 		case ShapeType.Stroke:		return try ShapeFillAndStroke(from:decoder)
 		case ShapeType.Rectangle:	return try ShapeRectangle(from:decoder)
+		case ShapeType.Merge:		return try ShapeMerge(from:decoder)
 		default:	throw fatalError("Uhandled shape type \(shapeType)")
 		}
 	}
@@ -920,6 +932,13 @@ class ShapePath : Shape
 	}
 }
 
+//	https://lottiefiles.github.io/lottie-docs/shapes/#merge
+class ShapeMerge : Shape
+{
+	public var mm : Int = 0
+	public var MergeMode : Int	{	mm	}	//	todo: enum
+}
+	
 class ShapeRectangle : Shape
 {
 	public var p : AnimatedVector
