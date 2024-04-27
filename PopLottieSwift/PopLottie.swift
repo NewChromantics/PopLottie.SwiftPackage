@@ -101,7 +101,7 @@ class RenderView : UIView
 		shapeRootLayer.frame = contentRect
 		
 		let AnimFrame = renderer.Render(contentRect: contentRect)
-		let Shapes = AnimFrame.GetShapes(IncludeDebug:true)
+		let Shapes = AnimFrame.GetShapes(IncludeDebug:false)
 		
 		while ( shapeRootLayer.sublayers?.count ?? 0 > Shapes.count )
 		{
