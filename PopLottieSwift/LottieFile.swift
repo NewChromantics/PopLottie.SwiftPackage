@@ -1,5 +1,15 @@
 import QuartzCore
 
+enum Parse : Error
+{
+	case parseException(String)
+}
+
+enum Render : Error
+{
+	case renderException(String)
+}
+
 //	gr: need to find documentation on what the different versions represent
 //		https://lottiefiles.github.io/lottie-docs/breakdown/bouncy_ball/#top-level
 //		docs are 5.5.2
@@ -124,7 +134,7 @@ public struct ShapeWrapper : Decodable
 		case ShapeType.Stroke:		return try ShapeFillAndStroke(from:decoder)
 		case ShapeType.Rectangle:	return try ShapeRectangle(from:decoder)
 		case ShapeType.Merge:		return try ShapeMerge(from:decoder)
-		default:	throw fatalError("Uhandled shape type \(shapeType)")
+		default:	throw Parse.parseException("Uhandled shape type \(shapeType)")
 		}
 	}
 	
@@ -236,12 +246,39 @@ struct AnimatedBezier : Decodable
 	public var a : Int
 	public var Animated : Bool{	return a != 0	}
 	//	if not animated, k==Vector3
-	public var k : Bezier;	//	frames
+	public var k : [Bezier]	//	frames, sometimes one, sometimes an array (so custom init)
 	public var ix : Int;	//	property index
 	
 	public func GetBezier(_ Frame:FrameNumber) -> Bezier
 	{
-		return k;
+		return k[0];
+	}
+	
+	enum CodingKeys: CodingKey {
+		case a
+		case k
+		case ix
+	}
+	
+	init(from decoder: Decoder) throws 
+	{
+		let container = try decoder.container(keyedBy: CodingKeys.self)
+		self.a = try container.decode(Int.self, forKey: .a)
+		
+		if let ks = try? container.decode([Bezier].self, forKey: .k)
+		{
+			self.k = ks
+		}
+		else if let k = try? container.decode(Bezier.self, forKey: .k)
+		{
+			self.k = [k]
+		}
+		else
+		{
+			throw Parse.parseException(".k bezier not single item nor array of beziers")
+		}
+
+		self.ix = try container.decode(Int.self, forKey: .ix)
 	}
 }
 
@@ -379,7 +416,7 @@ struct ValueCurve : Decodable
 		}
 		else
 		{
-			throw fatalError("ValueCurve with no [decodable] x")
+			throw Parse.parseException("ValueCurve with no [decodable] x")
 		}
 
 		if let ys = try? container.decode([Float].self, forKey: .y)
@@ -392,7 +429,7 @@ struct ValueCurve : Decodable
 		}
 		else
 		{
-			throw fatalError("ValueCurve with no [decodable] x")
+			throw Parse.parseException("ValueCurve with no [decodable] x")
 		}
 	}
 }
@@ -495,7 +532,7 @@ class IFrameFuncs
 	{
 		if ( Component < 0 || Component >= Prev.count )
 		{
-			throw fatalError("Interpolate out of bounds");
+			throw Parse.parseException("Interpolate out of bounds");
 		}
 		var EaseInX = In?.x;
 		//var EaseInY = In?.y;
@@ -518,7 +555,7 @@ class IFrameFuncs
 		//	gr: we should never have zero frames coming in
 		if ( Frames.count == 0 )
 		{
-			throw fatalError("GetPrevNextFramesAtFrame missing frames");
+			throw Render.renderException("GetPrevNextFramesAtFrame missing frames");
 		}
 		
 		if ( Frames.count == 1 )
@@ -615,7 +652,7 @@ public struct Keyframed_FloatArray : Decodable//: IKeyframed<Frame_FloatArray>
 		if let Dictionary = try? decoder.container(keyedBy: CodingKeys.self)
 		{
 			//	gr: this doesn't really happen, because we never match the coding keys?
-			throw fatalError("Keyframed_FloatArray dictionary")
+			throw Parse.parseException("Keyframed_FloatArray dictionary")
 		}
 		else if let SingleValue = try? decoder.singleValueContainer()
 		{
@@ -645,17 +682,17 @@ public struct Keyframed_FloatArray : Decodable//: IKeyframed<Frame_FloatArray>
 			}
 			else
 			{
-				throw fatalError("Keyframed_FloatArray value not Number or array of Numbers")
+				throw Parse.parseException("Keyframed_FloatArray value not Number or array of Numbers")
 			}
 		}
 		else
 		{
-			throw fatalError("Keyframed_FloatArray unhandled type; not single-value")
+			throw Parse.parseException("Keyframed_FloatArray unhandled type; not single-value")
 		}
 		
 		if ( Frames.isEmpty )
 		{
-			throw fatalError("Decoded Keyframed_FloatArray with no frames")
+			throw Parse.parseException("Decoded Keyframed_FloatArray with no frames")
 		}
 	}
 	
@@ -681,7 +718,7 @@ public struct Keyframed_FloatArray : Decodable//: IKeyframed<Frame_FloatArray>
 		//	gr: we dont allow init with no frames, so this shouldn't happen
 		if ( Frames.count == 0 )
 		{
-			//throw fatalError("{GetType().Name}::GetValue missing frames");
+			//throw Parse.parseException("{GetType().Name}::GetValue missing frames");
 			print("{GetType().Name}::GetValue missing frames");
 			return [456.789]
 		}
@@ -690,7 +727,7 @@ public struct Keyframed_FloatArray : Decodable//: IKeyframed<Frame_FloatArray>
 		var LerpedValues = Prev.LerpTo(Next,Lerp);
 		/*if ( LerpedValues?.count ?? 0 == 0 )
 		{
-			throw fatalError("Lerping frames resulting in missing data");
+			throw Render.renderException("Lerping frames resulting in missing data");
 		}*/
 		return LerpedValues!;
 	}
@@ -809,12 +846,12 @@ struct Keyframed_Float : Decodable//: IKeyframed<Frame_FloatArray>
 			}
 			else
 			{
-				throw fatalError("Keyframed_FloatArray value not Number or array of Numbers")
+				throw Parse.parseException("Keyframed_FloatArray value not Number or array of Numbers")
 			}
 		}
 		else
 		{
-			throw fatalError("Keyframed_FloatArray unhandled type; not single-value")
+			throw Parse.parseException("Keyframed_FloatArray unhandled type; not single-value")
 		}
 	}
 	
@@ -842,7 +879,7 @@ struct Keyframed_Float : Decodable//: IKeyframed<Frame_FloatArray>
 	{
 		if ( Frames.count == 0 )
 		{
-			throw fatalError("{GetType().Name}::GetValue missing frames");
+			throw Parse.parseException("{GetType().Name}::GetValue missing frames");
 		}
 		
 		var (Prev,Lerp,Next) : (Frame_Float,Float?,Frame_Float) = try IFrameFuncs.GetPrevNextFramesAtFrame(Frames:Frames,TargetFrame:Frame);
@@ -946,7 +983,7 @@ public class AnimatedVector : Decodable
 		var Values = GetValueArray(Frame);
 		if ( Values.count == 0 )
 		{
-			//throw fatalError("{GetType().Name}::GetValue(vec2) missing frames");
+			//throw Parse.parseException("{GetType().Name}::GetValue(vec2) missing frames");
 			print("Animated vector with no values")
 			return Vector2(123.456,123.456)
 		}
