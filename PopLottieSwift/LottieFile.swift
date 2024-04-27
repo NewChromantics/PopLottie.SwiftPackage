@@ -1,5 +1,9 @@
 import QuartzCore
 
+//	gr: need to find documentation on what the different versions represent
+//		https://lottiefiles.github.io/lottie-docs/breakdown/bouncy_ball/#top-level
+//		docs are 5.5.2
+let LottieFormatVersion = "5.5.2"
 
 public enum ShapeType : String
 {
@@ -1345,6 +1349,19 @@ public struct Root : Decodable
 	public var LayerMeta[]	Layers => layers ?? Array.Empty<LayerMeta>();
 	public var MarkerMeta[]	Markers => markers ?? Array.Empty<MarkerMeta>();
  */
+	
+	public init(Width:Int,Height:Int,Name:String,DurationSeconds:Double)
+	{
+		layers = []
+		v = LottieFormatVersion
+		fr = 15
+		ip = 0.0
+		op = Float(DurationSeconds)
+		w  = CGFloat(Width)
+		h = CGFloat(Height)
+		nm = Name
+
+	}
 	
 }
 
