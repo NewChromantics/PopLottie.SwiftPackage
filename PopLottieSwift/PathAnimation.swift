@@ -9,13 +9,30 @@ public typealias FrameNumber = Double
 //		swift color also has extra work, so lets have a really simple, dumb colour type and do minimal conversion in specific renderers
 public struct AnimationColour
 {
-	var red,green,blue : Double
-	var alpha = 1.0
+	public var red,green,blue : Double
+	public var alpha = 1.0
 	
 	var cgColor : CGColor	{	return CGColor(red:red,green: green,blue: blue,alpha: alpha)	}
 	
 	static public var magenta : AnimationColour	{	return AnimationColour(red:1,green:0,blue:1)	}
 	static public var blue : AnimationColour	{	return AnimationColour(red:0,green:0,blue:1)	}
+	
+	init(red: Double, green: Double, blue: Double, alpha: Double = 1.0) 
+	{
+		self.red = red
+		self.green = green
+		self.blue = blue
+		self.alpha = alpha
+	}
+	
+	@available(macOS 14.0, *)
+	public init(_ Colour:Color.Resolved)
+	{
+		self.red = Double(Colour.red)
+		self.green = Double(Colour.green)
+		self.blue = Double(Colour.blue)
+		self.alpha = Double(Colour.opacity)
+	}
 }
 
 
