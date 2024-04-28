@@ -7,7 +7,7 @@ public typealias FrameNumber = Double
 
 //	gr: using CGColor ends up with OS calls and retains and such
 //		swift color also has extra work, so lets have a really simple, dumb colour type and do minimal conversion in specific renderers
-struct AnimationColour
+public struct AnimationColour
 {
 	var red,green,blue : Double
 	var alpha = 1.0
@@ -151,14 +151,33 @@ protocol AnimationRenderer
 }
 
 
-struct AnimationFrame
+public class AnimationFrame
 {
-	var shapes : [AnimationShape] = []
+	public var shapes : [AnimationShape] = []
 	var CanvasRect = CGRect()
 	
-	public mutating func AddShape(_ shape:AnimationShape)
+	public init()
+	{
+	}
+	
+	public init(shapes:[AnimationShape])
+	{
+		self.shapes = shapes
+	}
+	
+	public func AddShape(_ shape:AnimationShape)
 	{
 		shapes.append(shape)
+	}
+	
+	public func GetShape(Name MatchName:String) -> AnimationShape?
+	{
+		let Matches = shapes.filter { shape in shape.Name==MatchName }
+		if ( Matches.count == 0 )
+		{
+			return nil
+		}
+		return Matches[0]
 	}
 	
 	func GetShapes(IncludeDebug:Bool) -> [AnimationShape]
@@ -168,7 +187,7 @@ struct AnimationFrame
 		if ( IncludeDebug )
 		{
 			let RectPath = AnimationPath.CreateRect(Rect:self.CanvasRect)
-			var RectShape = AnimationShape(Paths: [RectPath])
+			var RectShape = AnimationShape(Paths: [RectPath], Name:"Canvas Rect")
 			RectShape.FillColour = AnimationColour.magenta
 			RectShape.StrokeColour = AnimationColour.blue
 			RectShape.FillColour!.alpha = 0.2
@@ -181,7 +200,7 @@ struct AnimationFrame
 	}
 }
 
-struct BezierPoint
+public struct BezierPoint
 {
 	public var ControlPointIn = Vector2()
 	public var ControlPointOut = Vector2()
@@ -200,7 +219,7 @@ struct BezierPoint
 	}
 }
 	
-struct Ellipse
+public struct Ellipse
 {
 	public var Center = Vector2()
 	public var Radius = Vector2()
@@ -218,7 +237,7 @@ public enum TextJustify : Int
 	case JustifyWithLastLineFull = 6
 }
 
-struct AnimationText
+public struct AnimationText
 {
 	public var Text : String
 	public var FontName = "Arial"	//	always expected if text specified
@@ -231,7 +250,7 @@ struct AnimationText
 	public var Justify = TextJustify.Center
 }
 
-struct AnimationPath
+public class AnimationPath
 {
 	public var BezierPath : [BezierPoint] = []
 	//public Vector3[]		LinearPath;
@@ -293,7 +312,7 @@ extension unichar : ExpressibleByUnicodeScalarLiteral {
 //	we return shapes instead of layers as rebuilding CALayer sublayers is expensive
 //	and we can optimise at the renderer level (including animating properties)
 //	structs match c# version. One shape (with same styling) can have multiple subshapes (eg. for holes)
-struct AnimationShape
+public class AnimationShape
 {
 	public var Paths : [AnimationPath]
 	//	gr: we use CGColor here instead of Color, so the caller needs to do Swift colour resolving
@@ -414,7 +433,7 @@ struct AnimationShape
 
 }
 
-protocol PathAnimation
+public protocol PathAnimation
 {
 	//	this should _probably_ return paths, and the renderer manage layers...
 	func RenderFrame(frameNumber:FrameNumber,contentRect:CGRect,scaleMode:ScaleMode,IncludeHiddenLayers:Bool) -> AnimationFrame
