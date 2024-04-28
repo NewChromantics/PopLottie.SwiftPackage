@@ -276,6 +276,20 @@ struct AnimationPath
 	}
 }
 
+struct GlyphMeta
+{
+	var Glyph : CGGlyph	//	int
+	var BoundingRect : CGRect
+}
+
+extension unichar : ExpressibleByUnicodeScalarLiteral {
+	public typealias UnicodeScalarLiteralType = UnicodeScalar
+
+	public init(unicodeScalarLiteral scalar: UnicodeScalar) {
+		self.init(scalar.value)
+	}
+}
+
 //	we return shapes instead of layers as rebuilding CALayer sublayers is expensive
 //	and we can optimise at the renderer level (including animating properties)
 //	structs match c# version. One shape (with same styling) can have multiple subshapes (eg. for holes)
@@ -316,30 +330,49 @@ struct AnimationShape
 			
 			if let text = path.Text
 			{
+				//	CATextLayer doesn't give us enough
+				//	flexibility, so instead compute each glyph!
+				//	this at least lets us do all the positioning in lottie render code
 				let FontTransform : UnsafePointer<CGAffineTransform>? = nil
 				let FontName = text.FontName as CFString
 				let FontOptions = CTFontOptions()//.preferSystemFont
 				let Font : CTFont = CTFontCreateWithNameAndOptions(FontName, CGFloat(text.FontSize), FontTransform, FontOptions )
+				let FontCg = CTFontCopyGraphicsFont(Font, nil)
 				
-				var CharacterTransform = CGAffineTransform(translationX: text.Position.x, y: text.Position.y)
-				
-				//	CATextLayer doesn't give us enough
-				//	flexibility, so instead compute each glyph!
-				//	this at least lets us do all the positioning in lottie render code
-				
-				//	https://stackoverflow.com/questions/9976454/cgpathref-from-string
-				//let Chars = Array(text.Text)
-				let Chars = text.Text.map({ String($0) })
-				//for char in text.Text.components(separatedBy: "")
-				for char in Chars
-				{
-					let CharString = char as CFString
-					//	glyph is an index into the font. 0 is a missing char (eg. space)
-					var Glyph = CTFontGetGlyphWithName( Font, CharString )
-					//public func CTFontGetBoundingRectsForGlyphs(_ font: CTFont, _ orientation: CTFontOrientation, _ glyphs: UnsafePointer<CGGlyph>, _ boundingRects: UnsafeMutablePointer<CGRect>?, _ count: CFIndex) -> CGRect
+				//	glyphnames are verbose, like exclamationmark. We need the unichar
+				//let Glyphs : [CGGlyph] = text.Text.map{ CTFontGetGlyphWithName( Font, String($0) as CFString ) }
+				let Chars = text.Text.map{ Char in Char.utf16.first! }
+				var GlyphsArray = UnsafeMutablePointer<CGGlyph>.allocate(capacity: Chars.count)
+				CTFontGetGlyphsForCharacters( Font, Chars, GlyphsArray, Chars.count)
+				var Glyphs = Array(UnsafeBufferPointer(start: GlyphsArray, count: Chars.count))
+				//var Glyphs : [CGGlyph] = (0...Chars.count-1).map{ i in GlyphsArray[i] }
 
-					var Size = CGSize()
-					let HorzSpacing = CTFontGetAdvancesForGlyphs( Font, CTFontOrientation.horizontal, &Glyph, &Size, 1 )
+				//	glyph is an index into the font. 0 is a missing char (eg. space)
+				//var Glyph = CTFontGetGlyphWithName( Font, CharString )
+				//var GlyphRects : [CGRect] = []
+				var GlyphRectMutables = UnsafeMutablePointer<CGRect>.allocate(capacity: Glyphs.count)
+				var GlyphAdvancesMutables = UnsafeMutablePointer<CGSize>.allocate(capacity: Glyphs.count)
+
+				var TextRect = CTFontGetBoundingRectsForGlyphs( Font, CTFontOrientation.horizontal, Glyphs, GlyphRectMutables, Glyphs.count )
+				var TextWidth = CTFontGetAdvancesForGlyphs( Font, CTFontOrientation.horizontal, Glyphs, GlyphAdvancesMutables, Glyphs.count )
+
+				var TextOrigin = text.Position;
+				//	justify text rect
+				if ( text.Justify == TextJustify.Center )
+				{
+					TextOrigin.x -= TextWidth / 2.0
+				}
+				
+				
+				//	draw each char
+				var CharacterTransform = CGAffineTransform(translationX: TextOrigin.x, y: TextOrigin.y )
+				for g in 0...Glyphs.count-1
+				{
+					let Glyph = Glyphs[g]
+					let GlyphRect = GlyphRectMutables[g]
+					let GlyphAdvance = GlyphAdvancesMutables[g]
+					
+					//	0 = missing (including space)
 					if ( Glyph != 0 )
 					{
 						//	glyphs are upside down!
@@ -350,7 +383,10 @@ struct AnimationShape
 							Shape.addPath(Path)
 						}
 					}
-					CharacterTransform = CharacterTransform.translatedBy(x: HorzSpacing, y: 0)
+					//	gr: does rect origin handle kerning etc?
+					//	todo: line feeds? or should always have been handled by animation parser?
+					//CharacterTransform = CharacterTransform.translatedBy(x: GlyphRect.width, y: 0)
+					CharacterTransform = CharacterTransform.translatedBy(x: GlyphAdvance.width, y: 0)
 				}
 			}
 		}
