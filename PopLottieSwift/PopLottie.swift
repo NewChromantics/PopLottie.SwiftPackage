@@ -21,6 +21,7 @@ class RenderView : UIView
 	//override var wantsUpdateLayer: Bool { return true	}
 	public var renderer : AnimationRenderer
 	var vsync : VSyncer? = nil
+	public var OnPreRender : ((AnimationFrame)->Void)?
 
 #if os(macOS)
 	override var isFlipped: Bool { return true	}
@@ -104,6 +105,7 @@ class RenderView : UIView
 		shapeRootLayer.frame = contentRect
 		
 		let AnimFrame = renderer.Render(contentRect: contentRect)
+		OnPreRender?(AnimFrame)
 		let Shapes = AnimFrame.GetShapes(IncludeDebug:false)
 		
 		while ( shapeRootLayer.sublayers?.count ?? 0 > Shapes.count )
@@ -150,7 +152,8 @@ struct RenderViewRep : UIViewRepresentable
 	typealias NSViewType = RenderView
 	
 	var renderer : AnimationRenderer
-	
+	var OnPreRender : ((AnimationFrame)->Void)? = nil
+
 	init(renderer:AnimationRenderer)
 	{
 		self.renderer = renderer
@@ -197,6 +200,7 @@ public struct LottieView : View, AnimationRenderer
 	//	this is essentially state
 	public var startTime : Date
 	var animation : PathAnimation? = nil
+	public var OnPreRender : ((AnimationFrame)->Void)? = nil
 
 	var animTime : TimeInterval
 	{
@@ -211,29 +215,32 @@ public struct LottieView : View, AnimationRenderer
 			let AnimTime = animTime * 1.0
 			let IncludeHiddenLayers = false	//	need to keep hidden layers to avoid CAShapeLayer implicit animations
 			let Layers = anim.Render(PlayTime: AnimTime, contentRect: contentRect, scaleMode: scaleMode, IncludeHiddenLayers: IncludeHiddenLayers)
+			OnPreRender?(Layers)
 			return Layers
 		}
 		return AnimationFrame()
 	}
 	
-	public init(resourceFilename:String)
+	public init(resourceFilename:String,OnPreRender:((AnimationFrame)->Void)?=nil)
 	{
 		let ResourceUrl = Bundle.main.url(forResource: resourceFilename, withExtension: "json")
-		self.init( filename: ResourceUrl! )
+		self.init( filename: ResourceUrl!, OnPreRender:OnPreRender )
 	}
 
-	public init(filename:URL)
+	public init(filename:URL,OnPreRender:((AnimationFrame)->Void)?=nil)
 	{
 		self.filename = filename
 		self.startTime = Date.now
 		self.animation = LottieAnimation(filename: filename)
+		self.OnPreRender = OnPreRender ?? self.OnPreRender
 	}
 		
 	//	use pre-existing/loaded doc
-	public init(lottie:Root)
+	public init(lottie:Root,OnPreRender:((AnimationFrame)->Void)?=nil)
 	{
 		self.startTime = Date.now
 		self.animation = LottieAnimation(lottie: lottie)
+		self.OnPreRender = OnPreRender ?? self.OnPreRender
 	}
 
 	public var body: some View
