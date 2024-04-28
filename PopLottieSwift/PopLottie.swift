@@ -79,6 +79,9 @@ class RenderView : UIView
 	
 	func UpdateLayer(layer:CAShapeLayer,shape:AnimationShape)
 	{
+		//	gr: we need some caching here!
+		//		esp with CreateCGPath
+		
 		CATransaction.begin()
 		//	turn off animations for a change of the layer
 		//	gr: there's still one ghosting after this, but that may be animation/lerping, rather than CALayer

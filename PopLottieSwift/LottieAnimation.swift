@@ -193,7 +193,28 @@ class LottieAnimation : PathAnimation
 				throw fatalError("Finished off old shape?");
 			}
 		}
-
+		
+		func RenderText(_ Text:TextData,_ ParentTransform:Transformer,_ LayerAlpha:Float) throws
+		{
+			for TextFrame in Text.d.Keyframes
+			{
+				let FillColour = TextFrame.Text.FillColour
+				let StrokeColour = TextFrame.Text.StrokeColour
+				let StrokeWidth = TextFrame.Text.StrokeWidth
+				
+				var Paths : [AnimationPath] = []
+				for Line in TextFrame.s.TextLines
+				{
+					Paths.append( AnimationPath(Line) )
+				}
+				var Shape = AnimationShape(Paths: Paths)
+				Shape.FillColour = FillColour
+				Shape.StrokeColour = StrokeColour
+				Shape.StrokeWidth = StrokeWidth
+				AddRenderShape(Shape)
+			}
+		}
+		
 		func RenderGroup(_ Group:ShapeGroup,_ ParentTransform:Transformer,_ LayerAlpha:Float) throws
 		{
 			//	run through sub shapes
@@ -403,6 +424,17 @@ class LottieAnimation : PathAnimation
 			try BeginShape();
 			
 			//	if Layer.type == LayerType.Text
+			if let text = Layer.Text
+			{
+				do
+				{
+					try RenderText(text,LayerTransform,LayerOpacity)
+				}
+				catch
+				{
+					print(error)
+				}
+			}
 			
 			//	gr: if Layer.type == LayerType.Shape
 			//	render the shape

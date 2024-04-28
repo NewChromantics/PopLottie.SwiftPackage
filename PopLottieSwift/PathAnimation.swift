@@ -212,18 +212,24 @@ struct AnimationPath
 	public var BezierPath : [BezierPoint] = []
 	//public Vector3[]		LinearPath;
 	public var EllipsePath : Ellipse? = nil
-	public var path : CGPath?
+	//public var path : CGPath? = nil
+	public var Text : String?
+	public var FontName : String	{	"Arial"	}	//	always expected if text specified
+	public var FontSize : Float = 42
 	
 	init(_ path:[BezierPoint])
 	{
 		BezierPath = path
-		self.path = nil
 	}
 
 	init(_ ellipse:Ellipse)
 	{
 		EllipsePath = ellipse
-		self.path = nil
+	}
+	
+	init(_ text:String)
+	{
+		Text = text
 	}
 	
 	static func CreateRect(Center:Vector2,Size:Vector2) -> AnimationPath
@@ -278,12 +284,58 @@ struct AnimationShape
 				}
 				Shape.closeSubpath()
 			}
+			
 			if let ellipse = path.EllipsePath
 			{
 				//Shape.move(to: ellipse.Center )
 				//	gr: like unity... no xy ellipse, need to make a path
 				Shape.addArc(center: ellipse.Center, radius: ellipse.Radius.x, startAngle: 0, endAngle:DegreesToRadians(Degrees: 359.99), clockwise: false)
 				Shape.closeSubpath()
+			}
+			
+			if let text = path.Text
+			{
+				let FontTransform : UnsafePointer<CGAffineTransform>? = nil
+				let FontName = path.FontName as CFString
+				let FontOptions = CTFontOptions.preferSystemFont
+				let Font : CTFont = CTFontCreateWithNameAndOptions(FontName, CGFloat(path.FontSize), FontTransform, FontOptions )
+				
+				var CharacterTransform = CGAffineTransform(translationX: 100, y: 100)
+				
+				//	glyphs are upside down!
+				CharacterTransform = CharacterTransform.scaledBy(x: 1, y: -1)
+				
+				//	CATextLayer doesn't give us enough
+				//	flexibility, so instead compute each glyph!
+				//	this at least lets us do all the positioning in lottie render code
+				
+				//	https://stackoverflow.com/questions/9976454/cgpathref-from-string
+				if #available(macOS 13.0, *) 
+				{
+					for char in text.split(separator:"")
+					//for char in Array(text)
+					{
+						let CharString = char as CFString
+						//	glyph is an index into the font. 0 is a missing char (eg. space)
+						var Glyph = CTFontGetGlyphWithName( Font, CharString )
+
+						var Size = CGSize()
+						let HorzSpacing = CTFontGetAdvancesForGlyphs( Font, CTFontOrientation.horizontal, &Glyph, &Size, 1 )
+						if ( Glyph != 0 )
+						{
+							let GlyphPath = CTFontCreatePathForGlyph( Font, Glyph, &CharacterTransform )
+							if let Path = GlyphPath
+							{
+								Shape.addPath(Path)
+							}
+						}
+						CharacterTransform = CharacterTransform.translatedBy(x: HorzSpacing, y: 0)
+					}
+				} 
+				else
+				{
+					// Fallback on earlier versions
+				}
 			}
 		}
 		return Shape

@@ -120,15 +120,20 @@ public enum TextJustify : Int
 public struct TextDocument : Decodable
 {
 	var f : String		//	font family
-	var fc : [Float]	//	fill colour
-	var sc : [Float]	//	stroke colour
-	var sw : Float	//	stroke width
+	var fc : [Double]	//	fill colour
+	var FillColour : AnimationColour	{	AnimationColour(red: fc[0], green: fc[1], blue: fc[2] )	}
+	var sc : [Double]	//	stroke colour
+	var StrokeColour : AnimationColour	{	AnimationColour(red: sc[0], green: sc[1], blue: sc[2] )	}
+	var sw : Double	//	stroke width
+	var StrokeWidth : Double	{sw}
 	var of : Bool	//	render stroke above fill
-	var s : Float	//	font size
+	var s : Double	//	font size
+	var FontSize : Double	{s}
 	var lh : Float	//	line height (distance between lines on multine or wrapped text)
 	var sz : [Float]?	//	size of containing text box
 	var ps : [Float]?	//	position of text box
 	var t : String		//	text seperated with \r newlines
+	var TextLines : [String]	{	t.components(separatedBy: "\r")	}
 	var j : Int
 	var Justify : TextJustify	{	TextJustify(rawValue: j) ?? TextJustify.Left	}
 	
@@ -137,12 +142,15 @@ public struct TextDocument : Decodable
 public struct TextDocumentKeyframe : Decodable
 {
 	var s : TextDocument
-	var t : Float		//	time
+	var Text : TextDocument	{	s	}
+	var t : FrameNumber		//	time (appearance only? where is end?)
+	var Time : FrameNumber	{	t	}
 }
 
 public struct AnimatedTextDocument : Decodable
 {
 	var k : [TextDocumentKeyframe]
+	var Keyframes : [TextDocumentKeyframe]	{	k	}
 	var x : String?	//	expression
 	var sid : String?	//	string id?
 }
