@@ -1340,7 +1340,7 @@ public class ShapeTransform : Shape
 	//	gr: not parsing as mix of animated & not
 	public var s : AnimatedVector	//	scale
 	public var r : AnimatedVector	//	rotation
-	public var o : AnimatedNumber	//	opacity
+	public var o : AnimatedNumber?	//	opacity
 
 	enum CodingKeys: CodingKey
 	{
@@ -1354,7 +1354,7 @@ public class ShapeTransform : Shape
 		self.a = try container.decode(AnimatedVector.self, forKey: .a)
 		self.s = try container.decode(AnimatedVector.self, forKey: .s)
 		self.r = try container.decode(AnimatedVector.self, forKey: .r)
-		self.o = try container.decode(AnimatedNumber.self, forKey: .o)
+		self.o = try? container.decode(AnimatedNumber.self, forKey: .o)
 
 		try super.init(from: decoder)
 	}
@@ -1371,7 +1371,7 @@ public class ShapeTransform : Shape
 	
 	func GetAlpha(_ Frame:FrameNumber) -> Float
 	{
-		var Opacity = o.GetValue(Frame);
+		var Opacity = o?.GetValue(Frame) ?? 100.0
 		var Alpha = Opacity / 100.00;
 		return Alpha;
 	}
