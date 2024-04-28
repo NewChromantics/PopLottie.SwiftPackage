@@ -214,6 +214,7 @@ class LottieAnimation : PathAnimation
 					var TextPath = AnimationText(Text: Line, FontName: TextFrame.Text.FontFamily, FontSize: FontSize, Position: WorldPosition )
 					var Path = AnimationPath(TextPath)
 					Paths.append( Path )
+					//	gr: need to scale this too?
 					LinePosition.y += TextFrame.Text.LineHeight
 				}
 				var Shape = AnimationShape(Paths: Paths)
