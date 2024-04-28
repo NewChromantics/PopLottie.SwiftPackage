@@ -36,14 +36,155 @@ func GetShapeType(_ type:String?) -> ShapeType
 	{
 		return ShapeType.Unknown
 	}
-	let ParsedShape = ShapeType(rawValue: type ?? ShapeType.Unknown.rawValue)
-	if ( ParsedShape == nil )
+	let Parsed = ShapeType(rawValue: type ?? ShapeType.Unknown.rawValue)
+	if ( Parsed == nil )
 	{
 		return ShapeType.Unknown
 	}
-	return ParsedShape ?? ShapeType.Unknown
+	return Parsed ?? ShapeType.Unknown
 }
 
+
+//	https://lottiefiles.github.io/lottie-docs/layers/#layers
+public enum LayerType : Int
+{
+	case Precomposition = 0
+	case SolidColour = 1
+	case Image = 2
+	case Empty = 3
+	case Shape = 4
+	case Text = 5
+	case Audio = 6
+	case VideoPlaceholder = 7
+	case ImageSequence = 8
+	case Video = 9
+	case ImagePlaceholder = 10
+	case Guide = 11
+	case Adjustment = 12
+	case Camera3D = 13
+	case Light = 14
+	case Data = 15
+
+	case Unknown = 999	//	gr: instead of throwing and complicating swift, have a dummy value
+}
+func GetlayerType(_ type:Int) -> LayerType
+{
+	let Parsed = LayerType(rawValue: type ?? LayerType.Unknown.rawValue)
+	if ( Parsed == nil )
+	{
+		return LayerType.Unknown
+	}
+	return Parsed ?? LayerType.Unknown
+}
+
+public struct TextStyle : Decodable
+{
+	var sw : AnimatedNumber	//	stroke width
+	var sc : AnimatedColour	//	stroke colour
+	var sh : AnimatedNumber	//	stroke hue
+	var ss : AnimatedNumber	//	stroke saturation
+	var sb : AnimatedNumber	//	Stroke Brightness
+	var so : AnimatedNumber	//	Stroke Opacity
+	var fc : AnimatedColour	//	Fill Color
+	var fh : AnimatedNumber	//	Fill Hue
+	var fs : AnimatedNumber	//	Fill Saturation
+	var fb : AnimatedNumber	//	Fill Brightness
+	var fo : AnimatedNumber	//	Fill Opacity
+	var t : AnimatedNumber	//	Letter Spacing
+	var bl : AnimatedNumber	//	Blur
+	var ls : AnimatedNumber	//	Line spacing
+}
+
+public struct TextRangeSelector : Decodable
+{
+}
+
+public struct TextRange : Decodable
+{
+	var nm : String
+	var s : TextRangeSelector
+	var a : TextStyle
+}
+
+public enum TextJustify : Int
+{
+	case Left = 0
+	case Right = 1
+	case Center = 2
+	case JustifyWithLastLineLeft = 3
+	case JustifyWithLastLineRight = 4
+	case JustifyWithLastLineCenter = 5
+	case JustifyWithLastLineFull = 6
+}
+
+public struct TextDocument : Decodable
+{
+	var f : String		//	font family
+	var fc : [Float]	//	fill colour
+	var sc : [Float]	//	stroke colour
+	var sw : Float	//	stroke width
+	var of : Bool	//	render stroke above fill
+	var s : Float	//	font size
+	var lh : Float	//	line height (distance between lines on multine or wrapped text)
+	var sz : [Float]?	//	size of containing text box
+	var ps : [Float]?	//	position of text box
+	var t : String		//	text seperated with \r newlines
+	var j : Int
+	var Justify : TextJustify	{	TextJustify(rawValue: j) ?? TextJustify.Left	}
+	
+}
+
+public struct TextDocumentKeyframe : Decodable
+{
+	var s : TextDocument
+	var t : Float		//	time
+}
+
+public struct AnimatedTextDocument : Decodable
+{
+	var k : [TextDocumentKeyframe]
+	var x : String?	//	expression
+	var sid : String?	//	string id?
+}
+
+
+
+public enum TextGrouping : Int
+{
+	case Characters = 1
+	case Word = 2
+	case Line = 3
+	case All = 4
+}
+
+
+//	https://lottiefiles.github.io/lottie-docs/text/#text-alignment-options
+public struct TextAlignment : Decodable
+{
+	var a : AnimatedVector	//	group alignment
+	var g : Int	//	Anchor point grouping
+	var Grouping : TextGrouping {	TextGrouping(rawValue: g) ?? TextGrouping.Characters }
+}
+
+//	Uses the path described by a layer mask to put the text on said path.
+struct TextFollowPath : Decodable
+{
+	var m : Int?	//	index of mask to use
+	var f : AnimatedNumber?	//	First margin
+	var l : AnimatedNumber?	//	Last margin
+	var r : AnimatedNumber?	//	reverse path
+	var a : AnimatedNumber?	//	force alignment
+	var p : AnimatedNumber?	//	perpendicular to path
+}
+
+
+public struct TextData : Decodable
+{
+	var a : [TextRange]
+	var d : AnimatedTextDocument
+	var m : TextAlignment
+	var p : TextFollowPath
+}
 
 public class Shape : Decodable//, Hashable
 {
@@ -1369,17 +1510,25 @@ public struct LayerMeta : Decodable, Identifiable	//	shape layer
 	public var ddd : Int
 	public var ThreeDimensions : Bool	{	ddd == 3	}
 	public var ty : Int
+	public var type : LayerType	{	GetlayerType(ty)	}
 	public var sr : Int
 	public var ks : ShapeTransform
 	public var Transform : ShapeTransform	{	ks	}	//	gr: this is not really a shape, but has same properties & interface (all the derived parts in ShapeTransform)
 	public var ao : Int
 	public var AutoOrient : Bool { return ao != 0	}
+	public var bm : Int?
+	public var BlendMode : Int	{	bm ?? 0 }
+
+	//	text layer
+	var t : TextData?
+	public var Text : TextData?	{	t	}
+	
+	//	shape layer
 	public var shapes : [ShapeWrapper]?
 	public var Shapes : [ShapeWrapper]	{	return shapes ?? []	}
 	public var ChildrenFrontToBack : [Shape]	{	Shapes.map{ sw in sw.TheShape }	}
 	public var ChildrenBackToFront : [Shape]	{	ChildrenFrontToBack.reversed()	}
-	public var bm : Int?
-	public var BlendMode : Int	{	bm ?? 0 }
+	
 	
 	
 	//	only needed because of id
@@ -1396,8 +1545,9 @@ public struct LayerMeta : Decodable, Identifiable	//	shape layer
 		case sr
 		case ks
 		case ao
-		case shapes
 		case bm
+		case shapes
+		case t
 	}
 	
 	public init(from decoder: Decoder) throws {
@@ -1414,8 +1564,13 @@ public struct LayerMeta : Decodable, Identifiable	//	shape layer
 		self.sr = try container.decode(Int.self, forKey: .sr)
 		self.ks = try container.decode(ShapeTransform.self, forKey: .ks)
 		self.ao = try container.decode(Int.self, forKey: .ao)
-		self.shapes = try container.decodeIfPresent([ShapeWrapper].self, forKey: .shapes)
 		self.bm = try container.decodeIfPresent(Int.self, forKey: .bm)
+		
+		//	shape layer
+		self.shapes = try container.decodeIfPresent([ShapeWrapper].self, forKey: .shapes)
+		
+		//	text layer
+		self.t = try container.decodeIfPresent(TextData.self, forKey: .t)
 	}
 	
 	
@@ -1423,7 +1578,7 @@ public struct LayerMeta : Decodable, Identifiable	//	shape layer
 
 
 //	seems a little faster as struct
-public struct Root : Decodable
+public class Root : Decodable
 {
 	public func FrameToTime(_ FrameNumber:FrameNumber) -> TimeInterval
 	{

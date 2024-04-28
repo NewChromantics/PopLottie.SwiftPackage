@@ -401,6 +401,10 @@ class LottieAnimation : PathAnimation
 			}
 
 			try BeginShape();
+			
+			//	if Layer.type == LayerType.Text
+			
+			//	gr: if Layer.type == LayerType.Shape
 			//	render the shape
 			for Shape in Layer.ChildrenBackToFront
 			{
