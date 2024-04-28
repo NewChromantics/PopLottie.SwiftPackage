@@ -328,33 +328,29 @@ struct AnimationShape
 				//	this at least lets us do all the positioning in lottie render code
 				
 				//	https://stackoverflow.com/questions/9976454/cgpathref-from-string
-				if #available(macOS 13.0, *) 
+				//let Chars = Array(text.Text)
+				let Chars = text.Text.map({ String($0) })
+				//for char in text.Text.components(separatedBy: "")
+				for char in Chars
 				{
-					for char in text.Text.split(separator:"")
-					//for char in Array(text)
-					{
-						let CharString = char as CFString
-						//	glyph is an index into the font. 0 is a missing char (eg. space)
-						var Glyph = CTFontGetGlyphWithName( Font, CharString )
+					let CharString = char as CFString
+					//	glyph is an index into the font. 0 is a missing char (eg. space)
+					var Glyph = CTFontGetGlyphWithName( Font, CharString )
+					//public func CTFontGetBoundingRectsForGlyphs(_ font: CTFont, _ orientation: CTFontOrientation, _ glyphs: UnsafePointer<CGGlyph>, _ boundingRects: UnsafeMutablePointer<CGRect>?, _ count: CFIndex) -> CGRect
 
-						var Size = CGSize()
-						let HorzSpacing = CTFontGetAdvancesForGlyphs( Font, CTFontOrientation.horizontal, &Glyph, &Size, 1 )
-						if ( Glyph != 0 )
+					var Size = CGSize()
+					let HorzSpacing = CTFontGetAdvancesForGlyphs( Font, CTFontOrientation.horizontal, &Glyph, &Size, 1 )
+					if ( Glyph != 0 )
+					{
+						//	glyphs are upside down!
+						var RenderTransform = CharacterTransform.scaledBy(x: 1, y: -1)
+						let GlyphPath = CTFontCreatePathForGlyph( Font, Glyph, &RenderTransform )
+						if let Path = GlyphPath
 						{
-							//	glyphs are upside down!
-							var RenderTransform = CharacterTransform.scaledBy(x: 1, y: -1)
-							let GlyphPath = CTFontCreatePathForGlyph( Font, Glyph, &RenderTransform )
-							if let Path = GlyphPath
-							{
-								Shape.addPath(Path)
-							}
+							Shape.addPath(Path)
 						}
-						CharacterTransform = CharacterTransform.translatedBy(x: HorzSpacing, y: 0)
 					}
-				} 
-				else
-				{
-					// Fallback on earlier versions
+					CharacterTransform = CharacterTransform.translatedBy(x: HorzSpacing, y: 0)
 				}
 			}
 		}
