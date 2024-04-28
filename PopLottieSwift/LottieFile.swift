@@ -106,20 +106,12 @@ public struct TextRange : Decodable
 	var a : TextStyle
 }
 
-public enum TextJustify : Int
-{
-	case Left = 0
-	case Right = 1
-	case Center = 2
-	case JustifyWithLastLineLeft = 3
-	case JustifyWithLastLineRight = 4
-	case JustifyWithLastLineCenter = 5
-	case JustifyWithLastLineFull = 6
-}
+
 
 public struct TextDocument : Decodable
 {
 	var f : String		//	font family
+	var FontFamily : String	{f}
 	var fc : [Double]	//	fill colour
 	var FillColour : AnimationColour	{	AnimationColour(red: fc[0], green: fc[1], blue: fc[2] )	}
 	var sc : [Double]	//	stroke colour
@@ -129,7 +121,8 @@ public struct TextDocument : Decodable
 	var of : Bool	//	render stroke above fill
 	var s : Double	//	font size
 	var FontSize : Double	{s}
-	var lh : Float	//	line height (distance between lines on multine or wrapped text)
+	var lh : Double	//	line height (distance between lines on multine or wrapped text)
+	var LineHeight : Double {lh}
 	var sz : [Float]?	//	size of containing text box
 	var ps : [Float]?	//	position of text box
 	var t : String		//	text seperated with \r newlines

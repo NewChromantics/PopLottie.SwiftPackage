@@ -198,14 +198,23 @@ class LottieAnimation : PathAnimation
 		{
 			for TextFrame in Text.d.Keyframes
 			{
-				let FillColour = TextFrame.Text.FillColour
-				let StrokeColour = TextFrame.Text.StrokeColour
+				var FillColour = TextFrame.Text.FillColour
+				var StrokeColour = TextFrame.Text.StrokeColour
 				let StrokeWidth = TextFrame.Text.StrokeWidth
-				
+				FillColour.alpha *= Double(LayerAlpha)
+				StrokeColour.alpha *= Double(LayerAlpha)
+
 				var Paths : [AnimationPath] = []
+				//	gr: need to generate a transform specifically for glyphs here hmm
+				var LinePosition = Vector2(0.0,0.0)
+				let FontSize = ParentTransform.LocalToWorldSize( CGFloat(TextFrame.Text.FontSize) )
 				for Line in TextFrame.s.TextLines
 				{
-					Paths.append( AnimationPath(Line) )
+					var WorldPosition = ParentTransform.LocalToWorldPosition(LinePosition)
+					var TextPath = AnimationText(Text: Line, FontName: TextFrame.Text.FontFamily, FontSize: FontSize, Position: WorldPosition )
+					var Path = AnimationPath(TextPath)
+					Paths.append( Path )
+					LinePosition.y += TextFrame.Text.LineHeight
 				}
 				var Shape = AnimationShape(Paths: Paths)
 				Shape.FillColour = FillColour

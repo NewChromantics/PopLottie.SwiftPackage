@@ -205,17 +205,38 @@ struct Ellipse
 	public var Center = Vector2()
 	public var Radius = Vector2()
 }
+
+public enum TextJustify : Int
+{
+	//	gr: note these numbers match lottie's spec, if these ever want to be reused, make it abstract here
+	case Left = 0
+	case Right = 1
+	case Center = 2
+	case JustifyWithLastLineLeft = 3
+	case JustifyWithLastLineRight = 4
+	case JustifyWithLastLineCenter = 5
+	case JustifyWithLastLineFull = 6
+}
+
+struct AnimationText
+{
+	public var Text : String
+	public var FontName = "Arial"	//	always expected if text specified
 	
+	//	text needs specific layout...
+	//	but in the path generation, we dont have glyph dimensions & spacing
+	//	should we calculate generically?
+	public var FontSize = 42.0
+	public var Position = Vector2()
+	public var Justify = TextJustify.Center
+}
 
 struct AnimationPath
 {
 	public var BezierPath : [BezierPoint] = []
 	//public Vector3[]		LinearPath;
 	public var EllipsePath : Ellipse? = nil
-	//public var path : CGPath? = nil
-	public var Text : String?
-	public var FontName : String	{	"Arial"	}	//	always expected if text specified
-	public var FontSize : Float = 42
+	public var Text : AnimationText? = nil
 	
 	init(_ path:[BezierPoint])
 	{
@@ -227,7 +248,7 @@ struct AnimationPath
 		EllipsePath = ellipse
 	}
 	
-	init(_ text:String)
+	init(_ text:AnimationText)
 	{
 		Text = text
 	}
@@ -296,14 +317,11 @@ struct AnimationShape
 			if let text = path.Text
 			{
 				let FontTransform : UnsafePointer<CGAffineTransform>? = nil
-				let FontName = path.FontName as CFString
-				let FontOptions = CTFontOptions.preferSystemFont
-				let Font : CTFont = CTFontCreateWithNameAndOptions(FontName, CGFloat(path.FontSize), FontTransform, FontOptions )
+				let FontName = text.FontName as CFString
+				let FontOptions = CTFontOptions()//.preferSystemFont
+				let Font : CTFont = CTFontCreateWithNameAndOptions(FontName, CGFloat(text.FontSize), FontTransform, FontOptions )
 				
-				var CharacterTransform = CGAffineTransform(translationX: 100, y: 100)
-				
-				//	glyphs are upside down!
-				CharacterTransform = CharacterTransform.scaledBy(x: 1, y: -1)
+				var CharacterTransform = CGAffineTransform(translationX: text.Position.x, y: text.Position.y)
 				
 				//	CATextLayer doesn't give us enough
 				//	flexibility, so instead compute each glyph!
@@ -312,7 +330,7 @@ struct AnimationShape
 				//	https://stackoverflow.com/questions/9976454/cgpathref-from-string
 				if #available(macOS 13.0, *) 
 				{
-					for char in text.split(separator:"")
+					for char in text.Text.split(separator:"")
 					//for char in Array(text)
 					{
 						let CharString = char as CFString
@@ -323,7 +341,9 @@ struct AnimationShape
 						let HorzSpacing = CTFontGetAdvancesForGlyphs( Font, CTFontOrientation.horizontal, &Glyph, &Size, 1 )
 						if ( Glyph != 0 )
 						{
-							let GlyphPath = CTFontCreatePathForGlyph( Font, Glyph, &CharacterTransform )
+							//	glyphs are upside down!
+							var RenderTransform = CharacterTransform.scaledBy(x: 1, y: -1)
+							let GlyphPath = CTFontCreatePathForGlyph( Font, Glyph, &RenderTransform )
 							if let Path = GlyphPath
 							{
 								Shape.addPath(Path)
