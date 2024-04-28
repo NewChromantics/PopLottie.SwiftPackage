@@ -194,7 +194,7 @@ class LottieAnimation : PathAnimation
 			}
 		}
 		
-		func RenderText(_ Text:TextData,_ ParentTransform:Transformer,_ LayerAlpha:Float) throws
+		func RenderText(_ Text:TextData,_ ParentTransform:Transformer,_ LayerAlpha:Float, LayerName:String) throws
 		{
 			for TextFrame in Text.d.Keyframes
 			{
@@ -217,7 +217,7 @@ class LottieAnimation : PathAnimation
 					//	gr: need to scale this too?
 					LinePosition.y += TextFrame.Text.LineHeight
 				}
-				var Shape = AnimationShape(Paths: Paths)
+				var Shape = AnimationShape(Paths: Paths, Name:LayerName)
 				Shape.FillColour = FillColour
 				Shape.StrokeColour = StrokeColour
 				Shape.StrokeWidth = StrokeWidth
@@ -225,7 +225,7 @@ class LottieAnimation : PathAnimation
 			}
 		}
 		
-		func RenderGroup(_ Group:ShapeGroup,_ ParentTransform:Transformer,_ LayerAlpha:Float) throws
+		func RenderGroup(_ Group:ShapeGroup,_ ParentTransform:Transformer,_ LayerAlpha:Float, LayerName:String) throws
 		{
 			//	run through sub shapes
 			var Children = Group.ChildrenBackToFront;
@@ -253,7 +253,7 @@ class LottieAnimation : PathAnimation
 				FillColour?.alpha *= Double(GroupAlpha)
 				StrokeColour?.alpha *= Double(GroupAlpha)
 
-				var NewShape = AnimationShape(Paths: CurrentPaths);
+				var NewShape = AnimationShape(Paths: CurrentPaths, Name:LayerName);
 			
 				if ( GroupStyle.IsStroked )
 				{
@@ -362,7 +362,7 @@ class LottieAnimation : PathAnimation
 				{
 					do
 					{
-						try RenderGroup(subgroup,GroupTransform,GroupAlpha);
+						try RenderGroup(subgroup,GroupTransform,GroupAlpha, LayerName:LayerName);
 					}
 					catch
 					{
@@ -438,7 +438,7 @@ class LottieAnimation : PathAnimation
 			{
 				do
 				{
-					try RenderText(text,LayerTransform,LayerOpacity)
+					try RenderText( text, LayerTransform, LayerOpacity, LayerName:Layer.Name)
 				}
 				catch
 				{
@@ -454,7 +454,7 @@ class LottieAnimation : PathAnimation
 				{
 					if let group = Shape as? ShapeGroup
 					{
-						try RenderGroup(group,LayerTransform,LayerOpacity);
+						try RenderGroup(group,LayerTransform,LayerOpacity, LayerName:Layer.Name);
 					}
 					else
 					{

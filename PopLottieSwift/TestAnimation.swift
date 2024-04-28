@@ -67,7 +67,7 @@ class TestAnimation : PathAnimation
 					clockwise: false)
 
 		//var shape = AnimationShape(Paths: [path])
-		var shape = AnimationShape(Paths: [])
+		var shape = AnimationShape(Paths: [], Name:"Test Circle")
 		shape.FillColour = AnimationColour(red: 0, green: 1, blue: 1, alpha: 0.7)
 		shape.StrokeColour = AnimationColour(red: 0, green: 0, blue: 0, alpha: 0.7)
 		shape.StrokeWidth = 20

@@ -320,6 +320,13 @@ public class AnimationShape
 	public var FillColour : AnimationColour? = nil
 	public var StrokeColour : AnimationColour? = nil
 	public var StrokeWidth : CGFloat = 1
+	public var Name : String		//	layer name in lottie
+	
+	init(Paths: [AnimationPath], Name: String)
+	{
+		self.Paths = Paths
+		self.Name = Name
+	}
 	
 	func CreateCGPath() -> CGPath
 	{
