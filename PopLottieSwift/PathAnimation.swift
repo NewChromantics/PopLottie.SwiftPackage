@@ -235,6 +235,13 @@ public struct BezierPoint
 		ControlPointIn = Position
 		ControlPointOut = Position
 	}
+	
+	init(Position:Vector2,ControlPointIn:Vector2,ControlPointOut:Vector2)
+	{
+		self.Position = Position
+		self.ControlPointIn = ControlPointIn
+		self.ControlPointOut = ControlPointOut
+	}
 }
 	
 public struct Ellipse
@@ -303,6 +310,16 @@ public class AnimationPath
 			NonZeroRadius = nil
 		}
 
+		func GetCornerBeziers(Start:Vector2,Corner:Vector2,End:Vector2) -> [BezierPoint]
+		{
+			//	todo: apply a lerp to the bezier points, they shouldn't go right to the corner
+			//	https://nacho4d-nacho4d.blogspot.com/2011/05/bezier-paths-rounded-corners-rectangles.html
+			//	magic number is lerp( Pos -> Corner, 0.55)
+			var a = BezierPoint( Position:Start, ControlPointIn: Start, ControlPointOut: Corner )
+			var b = BezierPoint( Position:End, ControlPointIn: Corner, ControlPointOut: End )
+			return [a,b]
+		}
+		
 		if let radius = NonZeroRadius
 		{
 			//	https://nacho4d-nacho4d.blogspot.com/2011/05/bezier-paths-rounded-corners-rectangles.html
@@ -312,19 +329,16 @@ public class AnimationPath
 			let rin = r - radius
 			let tin = t + radius
 			let bin = b - radius
-			var Points =
-			[
-				Vector2(lin,t),
-				Vector2(rin,t),
-				Vector2(r,tin),
-				Vector2(r,bin),
-				Vector2(rin,b),
-				Vector2(lin,b),
-				Vector2(l,bin),
-				Vector2(l,tin),
-			]
-			var BezPoints = Points.map{ BezierPoint(Position: $0) }
-			return AnimationPath(BezPoints)
+			let tl = Vector2(l,t)
+			let tr = Vector2(r,t)
+			let br = Vector2(r,b)
+			let bl = Vector2(l,b)
+			var Points : [BezierPoint] = []
+			Points.append(contentsOf: GetCornerBeziers( Start: Vector2(l,tin), Corner: tl, End: Vector2(lin,t) ) )
+			Points.append(contentsOf: GetCornerBeziers( Start: Vector2(rin,t), Corner: tr, End: Vector2(r,tin) ) )
+			Points.append(contentsOf: GetCornerBeziers( Start: Vector2(r,bin), Corner: br, End: Vector2(rin,b) ) )
+			Points.append(contentsOf: GetCornerBeziers( Start: Vector2(lin,b), Corner: bl, End: Vector2(l,bin) ) )
+			return AnimationPath(Points)
 		}
 		else
 		{
