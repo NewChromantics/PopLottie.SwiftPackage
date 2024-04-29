@@ -187,18 +187,14 @@ struct RenderViewRep : UIViewRepresentable
 
 public struct LottieView : View, AnimationRenderer
 {
-	public static func == (lhs: LottieView, rhs: LottieView) -> Bool
-	{
-		return lhs.filename == rhs.filename
-	}
-	
-	public var filename : URL?=nil
+	public var fileUrl : URL?=nil
+	public var filename : String=""
 	public var scaleMode = ScaleMode.ScaleToFit
 
 	//	this is essentially state
 	public var startTime : Date
 	var animation : PathAnimation? = nil
-	public var OnPreRender : ((AnimationFrame)->Void)? = nil
+	public var OnPreRender : (AnimationFrame)->Void
 
 	var animTime : TimeInterval
 	{
@@ -213,32 +209,43 @@ public struct LottieView : View, AnimationRenderer
 			let AnimTime = animTime * 1.0
 			let IncludeHiddenLayers = false	//	need to keep hidden layers to avoid CAShapeLayer implicit animations
 			let Layers = anim.Render(PlayTime: AnimTime, contentRect: contentRect, scaleMode: scaleMode, IncludeHiddenLayers: IncludeHiddenLayers)
-			OnPreRender?(Layers)
+			OnPreRender(Layers)
 			return Layers
 		}
 		return AnimationFrame()
 	}
 	
-	public init(resourceFilename:String,OnPreRender:((AnimationFrame)->Void)?=nil)
+	public init(resourceFilename:String)
 	{
+		print("lottie init")
+		let ResourceUrl = Bundle.main.url(forResource: resourceFilename, withExtension: "json")
+		let noop : (AnimationFrame)->Void = {_ in }
+		self.init( filename: ResourceUrl!, OnPreRender:noop )
+		self.filename = resourceFilename
+	}
+	
+	public init(resourceFilename:String,OnPreRender:@escaping (AnimationFrame)->Void)
+	{
+		print("lottie init")
 		let ResourceUrl = Bundle.main.url(forResource: resourceFilename, withExtension: "json")
 		self.init( filename: ResourceUrl!, OnPreRender:OnPreRender )
+		self.filename = resourceFilename
 	}
 
-	public init(filename:URL,OnPreRender:((AnimationFrame)->Void)?=nil)
+	public init(filename:URL,OnPreRender:@escaping (AnimationFrame)->Void)
 	{
-		self.filename = filename
+		self.fileUrl = filename
 		self.startTime = Date.now
 		self.animation = LottieAnimation(filename: filename)
-		self.OnPreRender = OnPreRender ?? self.OnPreRender
+		self.OnPreRender = OnPreRender
 	}
 		
 	//	use pre-existing/loaded doc
-	public init(lottie:Root,OnPreRender:((AnimationFrame)->Void)?=nil)
+	public init(lottie:Root,OnPreRender:@escaping (AnimationFrame)->Void)
 	{
 		self.startTime = Date.now
 		self.animation = LottieAnimation(lottie: lottie)
-		self.OnPreRender = OnPreRender ?? self.OnPreRender
+		self.OnPreRender = OnPreRender
 	}
 
 	public var body: some View
