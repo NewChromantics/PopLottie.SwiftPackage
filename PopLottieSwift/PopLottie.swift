@@ -21,7 +21,6 @@ class RenderView : UIView
 	//override var wantsUpdateLayer: Bool { return true	}
 	public var renderer : AnimationRenderer
 	var vsync : VSyncer? = nil
-	public var OnPreRender : ((AnimationFrame)->Void)?
 
 #if os(macOS)
 	override var isFlipped: Bool { return true	}
@@ -105,7 +104,6 @@ class RenderView : UIView
 		shapeRootLayer.frame = contentRect
 		
 		let AnimFrame = renderer.Render(contentRect: contentRect)
-		OnPreRender?(AnimFrame)
 		let Shapes = AnimFrame.GetShapes(IncludeDebug:false)
 		
 		while ( shapeRootLayer.sublayers?.count ?? 0 > Shapes.count )
@@ -152,8 +150,7 @@ struct RenderViewRep : UIViewRepresentable
 	typealias NSViewType = RenderView
 	
 	var renderer : AnimationRenderer
-	var OnPreRender : ((AnimationFrame)->Void)? = nil
-
+	
 	init(renderer:AnimationRenderer)
 	{
 		self.renderer = renderer
