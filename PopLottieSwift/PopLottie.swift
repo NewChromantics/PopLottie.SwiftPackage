@@ -190,11 +190,11 @@ public struct LottieView : View, AnimationRenderer
 	public var fileUrl : URL?=nil
 	public var filename : String=""
 	public var scaleMode = ScaleMode.ScaleToFit
-
-	//	this is essentially state
-	public var startTime : Date
 	var animation : PathAnimation? = nil
 	public var OnPreRender : (AnimationFrame)->Void
+
+	//	gr: we want this to persist... so it's state!
+	@State public var startTime = Date.now
 
 	var animTime : TimeInterval
 	{
@@ -235,15 +235,13 @@ public struct LottieView : View, AnimationRenderer
 	public init(filename:URL,OnPreRender:@escaping (AnimationFrame)->Void)
 	{
 		self.fileUrl = filename
-		self.startTime = Date.now
 		self.animation = LottieAnimation(filename: filename)
 		self.OnPreRender = OnPreRender
 	}
-		
+
 	//	use pre-existing/loaded doc
 	public init(lottie:Root,OnPreRender:@escaping (AnimationFrame)->Void)
 	{
-		self.startTime = Date.now
 		self.animation = LottieAnimation(lottie: lottie)
 		self.OnPreRender = OnPreRender
 	}
