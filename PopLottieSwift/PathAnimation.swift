@@ -17,7 +17,7 @@ public struct AnimationColour
 	static public var magenta : AnimationColour	{	return AnimationColour(red:1,green:0,blue:1)	}
 	static public var blue : AnimationColour	{	return AnimationColour(red:0,green:0,blue:1)	}
 	
-	init(red: Double, green: Double, blue: Double, alpha: Double = 1.0) 
+	public init(red: Double, green: Double, blue: Double, alpha: Double = 1.0) 
 	{
 		self.red = red
 		self.green = green
@@ -25,6 +25,7 @@ public struct AnimationColour
 		self.alpha = alpha
 	}
 	
+	@available(iOS 17.0, *)
 	@available(macOS 14.0, *)
 	public init(_ Colour:Color.Resolved)
 	{
