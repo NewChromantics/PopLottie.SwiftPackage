@@ -194,7 +194,7 @@ class LottieAnimation : PathAnimation
 			}
 		}
 		
-		func RenderText(_ Text:TextData,_ ParentTransform:Transformer,_ LayerAlpha:Float, LayerName:String) throws
+		func RenderText(_ Text:TextData,_ ParentTransform:Transformer,_ LayerAlpha:Double, LayerName:String) throws
 		{
 			for TextFrame in Text.d.Keyframes
 			{
@@ -207,11 +207,11 @@ class LottieAnimation : PathAnimation
 				var Paths : [AnimationPath] = []
 				//	gr: need to generate a transform specifically for glyphs here hmm
 				var LinePosition = Vector2(0.0,0.0)
-				let FontSize = ParentTransform.LocalToWorldSize( CGFloat(TextFrame.Text.FontSize) )
+				let FontSize = ParentTransform.LocalToWorldSize(TextFrame.Text.FontSize)
 				for Line in TextFrame.s.TextLines
 				{
 					var WorldPosition = ParentTransform.LocalToWorldPosition(LinePosition)
-					var TextPath = AnimationText(Text: Line, FontName: TextFrame.Text.FontFamily, FontSize: FontSize, Position: WorldPosition )
+					var TextPath = AnimationText(Text: Line, FontName: TextFrame.Text.FontFamily, FontSize: Double(FontSize), Position: WorldPosition )
 					var Path = AnimationPath(TextPath)
 					Paths.append( Path )
 					//	gr: need to scale this too?
@@ -225,7 +225,7 @@ class LottieAnimation : PathAnimation
 			}
 		}
 		
-		func RenderGroup(_ Group:ShapeGroup,_ ParentTransform:Transformer,_ LayerAlpha:Float, LayerName:String) throws
+		func RenderGroup(_ Group:ShapeGroup,_ ParentTransform:Transformer,_ LayerAlpha:Double, LayerName:String) throws
 		{
 			//	run through sub shapes
 			var Children = Group.ChildrenBackToFront;

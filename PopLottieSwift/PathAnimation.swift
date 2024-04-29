@@ -337,7 +337,7 @@ public class AnimationShape
 	//		Color.cgColor is deprecated and will return nil for things like Color.yellow (as there is no CGColor.yellow)
 	public var FillColour : AnimationColour? = nil
 	public var StrokeColour : AnimationColour? = nil
-	public var StrokeWidth : CGFloat = 1
+	public var StrokeWidth : Double = 1
 	public var Name : String		//	layer name in lottie
 	
 	init(Paths: [AnimationPath], Name: String)

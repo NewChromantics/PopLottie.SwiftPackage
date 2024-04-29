@@ -237,7 +237,7 @@ struct ShapeStyle
 {
 	public var	FillColour : AnimationColour?
 	public var	StrokeColour : AnimationColour?
-	public var	StrokeWidth : CGFloat?
+	public var	StrokeWidth : Double?
 	public var	IsStroked : Bool	{	return StrokeColour != nil	}
 	public var	IsFilled : Bool 	{	return FillColour != nil	}
 }
@@ -308,7 +308,7 @@ class ShapeFillAndStroke : Shape
 		try super.init(from:decoder)
 	}
 
-	func GetWidth(_ Frame:FrameNumber) -> CGFloat
+	func GetWidth(_ Frame:FrameNumber) -> Double
 	{
 		/*
 		var Value = w.GetValue(Frame);
@@ -434,11 +434,11 @@ public class Frame_FloatArray : Decodable, IFrame
 	var h : Int?
 	var HoldingFrame : Bool	{	h != 0	}
 	var t : Double
-	var s : [Float]? = nil	//	start value
+	var s : [Double]? = nil	//	start value
 	//	gr: e sometimes missing for .to & .ti
-	var e : [Float]? = nil	//	end value
-	var to : [Float]? = nil	//	end value
-	var ti : [Float]? = nil	//	end value
+	var e : [Double]? = nil	//	end value
+	var to : [Double]? = nil	//	end value
+	var ti : [Double]? = nil	//	end value
 
 	var Frame : FrameNumber	{	FrameNumber(t)	}
 	var IsTerminatingFrame : Bool {	s==nil	}
@@ -464,11 +464,11 @@ public class Frame_FloatArray : Decodable, IFrame
 		self.o = try container.decodeIfPresent(ValueCurve.self, forKey: .o)
 		self.h = try container.decodeIfPresent(Int.self, forKey: .h)
 		self.t = try container.decode(Double.self, forKey: .t)
-		self.s = try container.decodeIfPresent([Float].self, forKey: .s)
-		self.e = try container.decodeIfPresent([Float].self, forKey: .e)
+		self.s = try container.decodeIfPresent([Double].self, forKey: .s)
+		self.e = try container.decodeIfPresent([Double].self, forKey: .e)
 	}
 	
-	init(Frames:[Float])
+	init(Frames:[Double])
 	{
 		self.s = Frames
 		self.t = -123	//	should never be used as we have no e
@@ -494,7 +494,7 @@ public class Frame_FloatArray : Decodable, IFrame
 
 	
 	
-	func LerpTo(_ Next:Frame_FloatArray,_ Lerp:Float?) -> [Float]?
+	func LerpTo(_ Next:Frame_FloatArray,_ Lerp:Double?) -> [Double]?
 	{
 		var NextValues = Next.s;
 		var PrevValues = self.s;
@@ -523,7 +523,7 @@ public class Frame_FloatArray : Decodable, IFrame
 		}
 		
 		//	lerp each member
-		var Values = [Float](repeating:0, count:s!.count)
+		var Values = [Double](repeating:0, count:s!.count)
 		for v in 0...Values.count-1
 		{
 			Values[v] = try! IFrameFuncs.Interpolate( v, PrevValues!, NextValues!, Lerp!, i, o );
@@ -535,8 +535,8 @@ public class Frame_FloatArray : Decodable, IFrame
 
 struct ValueCurve : Decodable
 {
-	var x : [Float]	//	time X axis
-	var y : [Float]	//	value Y axis
+	var x : [Double]	//	time X axis
+	var y : [Double]	//	value Y axis
 
 	//	gr: sometimes not an array, just x:0 y:1
 	//		so we need a custom init again
@@ -548,11 +548,11 @@ struct ValueCurve : Decodable
 	init(from decoder: Decoder) throws 
 	{
 		let container = try decoder.container(keyedBy: CodingKeys.self)
-		if let xs = try? container.decode([Float].self, forKey: .x)
+		if let xs = try? container.decode([Double].self, forKey: .x)
 		{
 			self.x = xs
 		}
-		else if let x = try? container.decode(Float.self, forKey: .x)
+		else if let x = try? container.decode(Double.self, forKey: .x)
 		{
 			self.x = [x]
 		}
@@ -561,11 +561,11 @@ struct ValueCurve : Decodable
 			throw Parse.parseException("ValueCurve with no [decodable] x")
 		}
 
-		if let ys = try? container.decode([Float].self, forKey: .y)
+		if let ys = try? container.decode([Double].self, forKey: .y)
 		{
 			self.y = ys
 		}
-		else if let y = try? container.decode(Float.self, forKey: .y)
+		else if let y = try? container.decode(Double.self, forKey: .y)
 		{
 			self.y = [y]
 		}
@@ -584,15 +584,25 @@ protocol IFrame
 
 class Mathf
 {
-	static func Lerp(_ Prev:Float,_ Next:Float,_ Time:Float) -> Float
+	static func Lerp(_ Prev:Double,_ Next:Double,_ Time:Double) -> Double
 	{
 		return Prev + ( (Next-Prev) * Time )
+	}
+	
+	//	get the lerp(time) between prev & next
+	static func Range(_ Min:Double,_ Max:Double,_ Value:Double) -> Double
+	{
+		if ( Max-Min <= 0 )
+		{
+			return 0;
+		}
+		return Double( (Value-Min)/(Max-Min) )
 	}
 }
 
 class IFrameFuncs
 {
-	static func GetSlope(_ aT:Float,_ aA1:Float,_ aA2:Float) -> Float
+	static func GetSlope(_ aT:Double,_ aA1:Double,_ aA2:Double) -> Double
 	{
 		//func A(_ aA1:Float,_ aA2:Float) -> Float { return 1.0 - 3.0 * aA2 + 3.0 * aA1; }
 		//func B(_ aA1:Float,_ aA2:Float) -> Float { return 3.0 * aA2 - 6.0 * aA1; }
@@ -604,7 +614,7 @@ class IFrameFuncs
 		return 3.0 * A * aT * aT + 2.0 * B * aT + C;
 	}
 
-	static func GetBezierValue(_ p0:Float,_ p1:Float,_ p2:Float,_ p3:Float,_ Time:Float) -> Float
+	static func GetBezierValue(_ p0:Double,_ p1:Double,_ p2:Double,_ p3:Double,_ Time:Double) -> Double
 	{
 		var t = Time;
 		//	https://morethandev.hashnode.dev/demystifying-the-cubic-bezier-function-ft-javascript
@@ -618,14 +628,14 @@ class IFrameFuncs
 	}
 
 
-	static func Interpolate(_ Prev:Float,_ Next:Float,_ Time:Float,_ InX:Float?,_ InY:Float?,_ OutX:Float?,_ OutY:Float?) -> Float
+	static func Interpolate(_ Prev:Double,_ Next:Double,_ Time:Double,_ InX:Double?,_ InY:Double?,_ OutX:Double?,_ OutY:Double?) -> Double
 	{
 		//	from docs
 		//	The y axis represents the value interpolation factor, a value of 0 represents the value at the current keyframe, a value of 1 represents the value at the next keyframe
 		var LinearValue = Mathf.Lerp( Prev, Next, Time );
 		
 		
-		func GetCurveX(_ Start:Float,_ EaseOut:Float,_ EaseIn:Float,_ End:Float,_ Time:Float) -> Float
+		func GetCurveX(_ Start:Double,_ EaseOut:Double,_ EaseIn:Double,_ End:Double,_ Time:Double) -> Double
 		{
 			//return GetBezierValue( Start, EaseOut, EaseIn, End, Time );
 			//	https://github.com/Samsung/rlottie/blob/d40008707addacb636ff435236d31c694ce2b6cf/src/vector/vinterpolator.cpp#L86
@@ -660,17 +670,17 @@ class IFrameFuncs
 			//	https://github.com/airbnb/lottie-ios/blob/41dfe7b0d8c3349adc7a5a03a1c6aaac8746433d/Sources/Private/Utility/Primitives/UnitBezier.swift#L36
 			//	uses https://github.com/gnustep/libs-quartzcore/blob/master/Source/CAMediaTimingFunction.m#L204C13-L204C25
 			//	solve time first
-			var CurveTime = GetCurveX( Float(Start.x), Float(EaseOut.x), Float(EaseIn.x), Float(End.x), Time );
+			var CurveTime = GetCurveX( Start.x, EaseOut.x, EaseIn.x, End.x, Time );
 			
 			//	solve value
-			var CurveValue = GetBezierValue( Float(Start.y), Float(EaseOut.y), Float(EaseIn.y), Float(End.y), CurveTime );
+			var CurveValue = GetBezierValue( Start.y, EaseOut.y, EaseIn.y, End.y, CurveTime );
 			var FinalValue = Mathf.Lerp( Prev, Next, CurveValue );
 			return FinalValue;
 		}
 		return LinearValue;
 	}
 	
-	static func Interpolate(_ Component:Int,_ Prev:[Float],_ Next:[Float],_ Time:Float,_ In:ValueCurve?,_ Out:ValueCurve?) throws -> Float
+	static func Interpolate(_ Component:Int,_ Prev:[Double],_ Next:[Double],_ Time:Double,_ In:ValueCurve?,_ Out:ValueCurve?) throws -> Double
 	{
 		if ( Component < 0 || Component >= Prev.count )
 		{
@@ -692,7 +702,7 @@ class IFrameFuncs
 	
 	//	returns null for Time, if both are same frame
 	//static (FRAMETYPE,float?,FRAMETYPE) GetPrevNextFramesAtFrame<FRAMETYPE>(List<FRAMETYPE> Frames,FrameNumber TargetFrame) where FRAMETYPE : IFrame
-	static func GetPrevNextFramesAtFrame<FRAMETYPE:IFrame>(Frames:[FRAMETYPE],TargetFrame:FrameNumber) throws -> (FRAMETYPE,Float?,FRAMETYPE)
+	static func GetPrevNextFramesAtFrame<FRAMETYPE:IFrame>(Frames:[FRAMETYPE],TargetFrame:FrameNumber) throws -> (FRAMETYPE,Double?,FRAMETYPE)
 	{
 		//	gr: we should never have zero frames coming in
 		if ( Frames.count == 0 )
@@ -735,16 +745,6 @@ class IFrameFuncs
 			return (Prev,nil,Prev);
 		}
 		
-		//	get the lerp(time) between prev & next
-		func Range(_ Min:Double,_ Max:Double,_ Value:Double) -> Float
-		{
-			if ( Max-Min <= 0 )
-			{
-				return 0;
-			}
-			return Float( (Value-Min)/(Max-Min) )
-		}
-		
 		/*
 		if ( Next.IsTerminatingFrame )
 		{
@@ -753,7 +753,7 @@ class IFrameFuncs
 		 */
 		
 		//var Lerp = Mathf.InverseLerp( Prev.Frame, Next.Frame, TargetFrame );
-		var Lerp = Range( Prev.Frame, Next.Frame, TargetFrame );
+		var Lerp = Mathf.Range( Prev.Frame, Next.Frame, TargetFrame );
 		if ( Lerp <= 0 )
 		{
 			Lerp = 0;
@@ -798,19 +798,19 @@ public struct Keyframed_FloatArray : Decodable//: IKeyframed<Frame_FloatArray>
 		}
 		else if let SingleValue = try? decoder.singleValueContainer()
 		{
-			if let Number = try? SingleValue.decode(Float.self)
+			if let Number = try? SingleValue.decode(Double.self)
 			{
 				AddFrame(Numbers: [Number])
 			}
-			else if let Number = try? SingleValue.decode(Int.self)
+			/*else if let Number = try? SingleValue.decode(Int.self)
 			{
-				AddFrame(Numbers: [Float(Number)])
+				AddFrame(Numbers: [Number])
 			}
 			else if let Numbers = try? SingleValue.decode([Int].self)
 			{
-				AddFrame(Numbers: Numbers.map{ i in Float(i) } )
-			}
-			else if let Numbers = try? SingleValue.decode([Float].self)
+				AddFrame(Numbers: Numbers.map{ i in Double(i) } )
+			}*/
+			else if let Numbers = try? SingleValue.decode([Double].self)
 			{
 				AddFrame(Numbers: Numbers)
 			}
@@ -838,7 +838,7 @@ public struct Keyframed_FloatArray : Decodable//: IKeyframed<Frame_FloatArray>
 		}
 	}
 	
-	mutating func AddFrame(Numbers:[Float])
+	mutating func AddFrame(Numbers:[Double])
 	{
 		var Frame = Frame_FloatArray(Frames:Numbers)
 		AddFrame([Frame]);
@@ -855,7 +855,7 @@ public struct Keyframed_FloatArray : Decodable//: IKeyframed<Frame_FloatArray>
 		self.Frames.append(contentsOf: Frames)
 	}
 
-	func GetValue(_ Frame:FrameNumber) -> [Float]
+	func GetValue(_ Frame:FrameNumber) -> [Double]
 	{
 		//	gr: we dont allow init with no frames, so this shouldn't happen
 		if ( Frames.count == 0 )
@@ -880,13 +880,13 @@ struct Frame_Float : Decodable, IFrame
 {
 	var i : ValueCurve?	//	ease in value
 	var o : ValueCurve?	//	ease out value
-	var t : Float	//	time
-	var s : [Float]?	//	value at time
-	var e : [Float]?	//	end value
+	var t : Double	//	time
+	var s : [Double]?	//	value at time
+	var e : [Double]?	//	end value
 	var Frame : FrameNumber	{	FrameNumber(t)	}
 	var IsTerminatingFrame : Bool {	s==nil	}
 
-	func LerpTo(_ Next:Frame_Float,_ Lerp:Float?) -> Float?
+	func LerpTo(_ Next:Frame_Float,_ Lerp:Double?) -> Double?
 	{
 		var NextValues = Next.s;
 		var PrevValues = self.s;
@@ -915,7 +915,7 @@ struct Frame_Float : Decodable, IFrame
 		}
 		
 		//	lerp each member
-		var Values = [Float](repeating:0, count:s!.count)
+		var Values = [Double](repeating:0, count:s!.count)
 		for v in 0...Values.count-1
 		{
 			Values[v] = try! IFrameFuncs.Interpolate( v, PrevValues!, NextValues!, Lerp!, i, o );
@@ -970,11 +970,11 @@ struct Keyframed_Float : Decodable//: IKeyframed<Frame_FloatArray>
 		//if let Dictionary = try decoder.container(keyedBy: CodingKeys.self)
 		if let SingleValue = try? decoder.singleValueContainer()
 		{
-			if let Number = try? SingleValue.decode(Float.self)
+			if let Number = try? SingleValue.decode(Double.self)
 			{
 				AddFrame(Numbers: [Number])
 			}
-			else if let Numbers = try? SingleValue.decode([Float].self)
+			else if let Numbers = try? SingleValue.decode([Double].self)
 			{
 				AddFrame(Numbers: Numbers)
 			}
@@ -997,7 +997,7 @@ struct Keyframed_Float : Decodable//: IKeyframed<Frame_FloatArray>
 		}
 	}
 	
-	mutating func AddFrame(Numbers:[Float])
+	mutating func AddFrame(Numbers:[Double])
 	{
 		var Frame = Frame_Float(t:-123);
 		Frame.s = Numbers;
@@ -1017,14 +1017,14 @@ struct Keyframed_Float : Decodable//: IKeyframed<Frame_FloatArray>
 		self.Frames.append(contentsOf: Frames)
 	}
 
-	func GetValue(_ Frame:FrameNumber) throws -> Float
+	func GetValue(_ Frame:FrameNumber) throws -> Double
 	{
 		if ( Frames.count == 0 )
 		{
 			throw Parse.parseException("{GetType().Name}::GetValue missing frames");
 		}
 		
-		var (Prev,Lerp,Next) : (Frame_Float,Float?,Frame_Float) = try IFrameFuncs.GetPrevNextFramesAtFrame(Frames:Frames,TargetFrame:Frame);
+		var (Prev,Lerp,Next) : (Frame_Float,Double?,Frame_Float) = try IFrameFuncs.GetPrevNextFramesAtFrame(Frames:Frames,TargetFrame:Frame);
 
 		return Prev.LerpTo(Next,Lerp)!;
 	}
@@ -1037,7 +1037,7 @@ public struct AnimatedNumber : Decodable
 	
 	var k : Keyframed_Float	//	frames
 	
-	func GetValue(_ Frame:FrameNumber) -> Float
+	func GetValue(_ Frame:FrameNumber) -> Double
 	{
 		return try! k.GetValue(Frame);
 	}
@@ -1099,7 +1099,7 @@ public class AnimatedVector : Decodable
 	}
 */
 	
-	public func GetValue(_ Frame:FrameNumber) -> Float
+	public func GetValue(_ Frame:FrameNumber) -> Double
 	{
 		if ( SplitVector )
 		{
@@ -1109,7 +1109,7 @@ public class AnimatedVector : Decodable
 	}
 	
 	
-	public func GetValueArray(_ Frame:FrameNumber) -> [Float]
+	public func GetValueArray(_ Frame:FrameNumber) -> [Double]
 	{
 		if ( SplitVector )
 		{
@@ -1287,7 +1287,7 @@ class ShapeGroup : Shape
 	}
 	
 	//	this comes from the transform, but we're just not keeping it with it
-	func GetAlpha(_ Frame:FrameNumber) -> Float
+	func GetAlpha(_ Frame:FrameNumber) -> Double
 	{
 		var Transform = GetChild(ShapeType.Transform) as? ShapeTransform;
 		if ( Transform == nil )
@@ -1369,7 +1369,7 @@ public class ShapeTransform : Shape
 		return Transformer( Position, Anchor, Scale, Double(Rotation) );
 	}
 	
-	func GetAlpha(_ Frame:FrameNumber) -> Float
+	func GetAlpha(_ Frame:FrameNumber) -> Double
 	{
 		var Opacity = o?.GetValue(Frame) ?? 100.0
 		var Alpha = Opacity / 100.00;
@@ -1458,12 +1458,12 @@ public class Transformer
 		}
 		return WorldSize;
 	}
-	func LocalToWorldSize(_ LocalSize:CGFloat) -> CGFloat
+	func LocalToWorldSize(_ LocalSize:Double) -> Double
 	{
 		//	expected to be used in 1D cases anyway
 		var Size2 = Vector2(LocalSize,LocalSize);
 		Size2 = LocalToWorldSize(Size2);
-		return Size2.x;
+		return Double(Size2.x)
 	}
 	
 }
