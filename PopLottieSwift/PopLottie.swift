@@ -169,14 +169,15 @@ struct RenderViewRep : UIViewRepresentable
 		return view
 	}
 
-	func updateUIView(_ uiView: RenderView, context: Context)
+	//	gr: this occurs when the RenderViewRep() is re-initialised, (from uiview redraw)
+	//		but the UIView underneath has persisted
+	func updateUIView(_ view: RenderView, context: Context)
 	{
-		//	gr: something changed? when does this occur?
+		view.renderer = self.renderer
 	}
-
-	func updateNSView(_ nsView: RenderView, context: Context)
+	func updateNSView(_ view: RenderView, context: Context)
 	{
-		//	gr: something changed? when does this occur?
+		updateUIView(view,context: context)
 	}
 }
 
