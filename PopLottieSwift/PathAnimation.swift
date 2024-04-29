@@ -290,19 +290,51 @@ public class AnimationPath
 		Text = text
 	}
 	
-	static func CreateRect(Center:Vector2,Size:Vector2) -> AnimationPath
+	static func CreateRect(Center:Vector2,Size:Vector2,CornerRadius:Double?=nil) -> AnimationPath
 	{
 		let l = Center.x - (Size.x/2.0)
 		let r = Center.x + (Size.x/2.0)
 		let t = Center.y - (Size.y/2.0)
 		let b = Center.y + (Size.y/2.0)
-		let tl = BezierPoint( Position:Vector2(l,t) )
-		let tr = BezierPoint( Position:Vector2(r,t) )
-		let br = BezierPoint( Position:Vector2(r,b) )
-		let bl = BezierPoint( Position:Vector2(l,b) )
-		var Points = [tl,tr,br,bl]
+		
+		var NonZeroRadius = CornerRadius
+		if ( NonZeroRadius != nil && NonZeroRadius! == 0.0 )
+		{
+			NonZeroRadius = nil
+		}
 
-		return AnimationPath(Points)
+		if let radius = NonZeroRadius
+		{
+			//	https://nacho4d-nacho4d.blogspot.com/2011/05/bezier-paths-rounded-corners-rectangles.html
+			//	make angled corners, then extend the control points... a bit
+			//	get inner values
+			let lin = l + radius
+			let rin = r - radius
+			let tin = t + radius
+			let bin = b - radius
+			var Points =
+			[
+				Vector2(lin,t),
+				Vector2(rin,t),
+				Vector2(r,tin),
+				Vector2(r,bin),
+				Vector2(rin,b),
+				Vector2(lin,b),
+				Vector2(l,bin),
+				Vector2(l,tin),
+			]
+			var BezPoints = Points.map{ BezierPoint(Position: $0) }
+			return AnimationPath(BezPoints)
+		}
+		else
+		{
+			let tl = BezierPoint( Position:Vector2(l,t) )
+			let tr = BezierPoint( Position:Vector2(r,t) )
+			let br = BezierPoint( Position:Vector2(r,b) )
+			let bl = BezierPoint( Position:Vector2(l,b) )
+			var Points = [tl,tr,br,bl]
+			return AnimationPath(Points)
+		}
 	}
 	
 	static func CreateRect(Rect:CGRect) -> AnimationPath

@@ -351,10 +351,13 @@ class LottieAnimation : PathAnimation
 				{
 					var LocalSize = try rectangle.Size.GetValueVec2(Frame)
 					var LocalCenter = try rectangle.Center.GetValueVec2(Frame)
+					var LocalCornerRadius = rectangle.CornerRadius.GetValue(Frame)
+
 					var RectCenter = GroupTransform.LocalToWorldPosition(LocalCenter);
 					var RectSize = GroupTransform.LocalToWorldSize(LocalSize)
-					
-					let Path = AnimationPath.CreateRect(Center: RectCenter, Size: RectSize)
+					var RectCornerRadius = GroupTransform.LocalToWorldSize(LocalCornerRadius)
+
+					let Path = AnimationPath.CreateRect(Center: RectCenter, Size: RectSize, CornerRadius:Double(RectCornerRadius))
 					AddPath( Path )
 				}
 		
