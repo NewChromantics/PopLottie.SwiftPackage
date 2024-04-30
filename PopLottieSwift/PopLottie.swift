@@ -182,7 +182,50 @@ struct RenderViewRep : UIViewRepresentable
 }
 
 
-
+public struct PlayState
+{
+	//	these internal & external start times are sync-times, so XStartTime = Frame:0
+	//	if both missing, we're paused on a frame number
+	var syncTime : Date? = Date.now
+	var frameNumber : FrameNumber = 0	//	only used when paused
+	
+	//	default init plays from start
+	public init(PlayFromFrame:FrameNumber=0)
+	{
+		Play(FromFrame: PlayFromFrame)
+	}
+	
+	public init(PausedAtFrame:FrameNumber)
+	{
+		Pause(FromFrame: PausedAtFrame)
+	}
+	
+	public mutating func Play(FromFrame:FrameNumber?=nil)
+	{
+		let offset = TimeInterval( FromFrame ?? frameNumber )
+		syncTime = Date.now - offset
+	}
+	
+	//	this won't pause if there's an external clock!
+	//	gr: throw if that's the case?
+	public mutating func Pause(FromFrame:FrameNumber?=nil)
+	{
+		frameNumber = FromFrame ?? animTime
+		syncTime = nil
+	}
+	
+	public var animTime : FrameNumber
+	{
+		//	now -> old time is backwards
+		if let startTime = syncTime
+		{
+			return -startTime.timeIntervalSinceNow
+		}
+		//	not sync'd, so we're sitting on a frame number
+		return frameNumber
+	}
+	 
+}
 
 
 public struct LottieView : View, AnimationRenderer
@@ -193,18 +236,13 @@ public struct LottieView : View, AnimationRenderer
 	var animation : PathAnimation? = nil
 	public var OnPreRender : (AnimationFrame)->Void
 
-	//	gr: we want this to persist... so it's state!
-	@State public var internalStartTime = Date.now
-	@Binding public var externalStartTime : Date?
-	var startTime : Date
+	@State var internalPlayState = PlayState()
+	@Binding var exernalPlayState : PlayState?
+	
+	var animTime : FrameNumber
 	{
-		return externalStartTime ?? internalStartTime
-	}
-
-	var animTime : TimeInterval
-	{
-		//	now -> old time is backwards
-		return -startTime.timeIntervalSinceNow
+		let Play = exernalPlayState ?? internalPlayState
+		return Play.animTime
 	}
 	
 	public static func OnPreRenderNoop(Anim:AnimationFrame)
@@ -232,19 +270,19 @@ public struct LottieView : View, AnimationRenderer
 	}
 	
 	//	keep closure at the end so we can do LottieView(){ ... }
-	public init(resourceFilename:String,externalStartTime:Binding<Date?>=Binding.constant(nil),OnPreRender:@escaping (AnimationFrame)->Void=LottieView.OnPreRenderNoop)
+	public init(resourceFilename:String,externalPlayState:Binding<PlayState?>=Binding.constant(nil),OnPreRender:@escaping (AnimationFrame)->Void=LottieView.OnPreRenderNoop)
 	{
 		let ResourceUrl = Bundle.main.url(forResource: resourceFilename, withExtension: "json")
-		self.init( filename: ResourceUrl!, externalStartTime:externalStartTime, OnPreRender:OnPreRender )
+		self.init( filename: ResourceUrl!, externalPlayState:externalPlayState, OnPreRender:OnPreRender )
 		self.filename = resourceFilename
 	}
 
-	public init(filename:URL,externalStartTime:Binding<Date?>=Binding.constant(nil),OnPreRender:@escaping (AnimationFrame)->Void=LottieView.OnPreRenderNoop)
+	public init(filename:URL,externalPlayState:Binding<PlayState?>=Binding.constant(nil),OnPreRender:@escaping (AnimationFrame)->Void=LottieView.OnPreRenderNoop)
 	{
 		self.fileUrl = filename
 		self.animation = LottieAnimation(filename: filename)
 		self.OnPreRender = OnPreRender
-		self._externalStartTime = externalStartTime
+		self._exernalPlayState = externalPlayState
 	}
 
 	//	use pre-existing/loaded doc
@@ -252,7 +290,7 @@ public struct LottieView : View, AnimationRenderer
 	{
 		self.animation = LottieAnimation(lottie: lottie)
 		self.OnPreRender = OnPreRender
-		self._externalStartTime = Binding.constant(nil)
+		self._exernalPlayState = Binding.constant(nil)
 	}
 
 	public var body: some View
