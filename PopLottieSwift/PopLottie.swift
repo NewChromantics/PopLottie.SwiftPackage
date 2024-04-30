@@ -194,12 +194,21 @@ public struct LottieView : View, AnimationRenderer
 	public var OnPreRender : (AnimationFrame)->Void
 
 	//	gr: we want this to persist... so it's state!
-	@State public var startTime = Date.now
+	@State public var internalStartTime = Date.now
+	@Binding public var externalStartTime : Date?
+	var startTime : Date
+	{
+		return externalStartTime ?? internalStartTime
+	}
 
 	var animTime : TimeInterval
 	{
 		//	now -> old time is backwards
 		return -startTime.timeIntervalSinceNow
+	}
+	
+	public static func OnPreRenderNoop(Anim:AnimationFrame)
+	{
 	}
 	
 	func Render(contentRect: CGRect) -> AnimationFrame
@@ -217,26 +226,25 @@ public struct LottieView : View, AnimationRenderer
 	
 	public init(resourceFilename:String)
 	{
-		print("lottie init")
 		let ResourceUrl = Bundle.main.url(forResource: resourceFilename, withExtension: "json")
-		let noop : (AnimationFrame)->Void = {_ in }
-		self.init( filename: ResourceUrl!, OnPreRender:noop )
+		self.init( filename: ResourceUrl!, OnPreRender:LottieView.OnPreRenderNoop )
 		self.filename = resourceFilename
 	}
 	
-	public init(resourceFilename:String,OnPreRender:@escaping (AnimationFrame)->Void)
+	//	keep closure at the end so we can do LottieView(){ ... }
+	public init(resourceFilename:String,externalStartTime:Binding<Date?>=Binding.constant(nil),OnPreRender:@escaping (AnimationFrame)->Void=LottieView.OnPreRenderNoop)
 	{
-		print("lottie init")
 		let ResourceUrl = Bundle.main.url(forResource: resourceFilename, withExtension: "json")
-		self.init( filename: ResourceUrl!, OnPreRender:OnPreRender )
+		self.init( filename: ResourceUrl!, externalStartTime:externalStartTime, OnPreRender:OnPreRender )
 		self.filename = resourceFilename
 	}
 
-	public init(filename:URL,OnPreRender:@escaping (AnimationFrame)->Void)
+	public init(filename:URL,externalStartTime:Binding<Date?>=Binding.constant(nil),OnPreRender:@escaping (AnimationFrame)->Void=LottieView.OnPreRenderNoop)
 	{
 		self.fileUrl = filename
 		self.animation = LottieAnimation(filename: filename)
 		self.OnPreRender = OnPreRender
+		self._externalStartTime = externalStartTime
 	}
 
 	//	use pre-existing/loaded doc
@@ -244,6 +252,7 @@ public struct LottieView : View, AnimationRenderer
 	{
 		self.animation = LottieAnimation(lottie: lottie)
 		self.OnPreRender = OnPreRender
+		self._externalStartTime = Binding.constant(nil)
 	}
 
 	public var body: some View
