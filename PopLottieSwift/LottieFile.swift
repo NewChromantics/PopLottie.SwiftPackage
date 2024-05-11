@@ -1032,14 +1032,14 @@ struct Keyframed_Float : Decodable//: IKeyframed<Frame_FloatArray>
 
 public struct AnimatedNumber : Decodable
 {
-	var a : Int
+	var a : Int = 0
 	var Animated : Bool	{	a != 0	}
 	
-	var k : Keyframed_Float	//	frames
+	var k : Keyframed_Float?	//	frames
 	
 	func GetValue(_ Frame:FrameNumber) -> Float
 	{
-		return try! k.GetValue(Frame);
+		return try! k!.GetValue(Frame);
 	}
 }
 
@@ -1347,6 +1347,16 @@ public class ShapeTransform : Shape
 		case p,a,s,r,o
 	}
 	
+	override init()
+	{
+		p = AnimatedVector()
+		a = AnimatedVector()
+		s = AnimatedVector()
+		r = AnimatedVector()
+		o = AnimatedNumber()
+		super.init()
+	}
+	
 	required init(from decoder: Decoder) throws
 	{
 		let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -1574,6 +1584,24 @@ public struct LayerMeta : Decodable, Identifiable	//	shape layer
 		self.t = try container.decodeIfPresent(TextData.self, forKey: .t)
 	}
 	
+	public init(name:String)
+	{
+		self.nm = name
+		self.ip = 0
+		self.op = 10
+		self.refId = nil
+		self.ind = nil
+		self.st = 0
+		self.ddd = 0
+		self.ty = LayerType.Shape.rawValue
+		self.sr = 0
+		self.ks = ShapeTransform()
+		self.ao = 0
+		self.bm = nil
+		self.t = nil
+		self.shapes = nil
+		
+	}
 	
 }
 
