@@ -13,14 +13,15 @@ public class GrahamsPromise<T>
 		//	spin! yuck!
 		while ( true )
 		{
-			await try! Task.sleep(nanoseconds: 1_000_000)
-			if ( result != nil )
+			//	throws when task cancelled
+			await try Task.sleep(nanoseconds: 1_000_000)
+			if let result
 			{
-				return result!
+				return result
 			}
-			if ( error != nil )
+			if let error
 			{
-				throw error!
+				throw error
 			}
 		}
 	}
